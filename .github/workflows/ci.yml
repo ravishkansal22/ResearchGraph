@@ -33,6 +33,10 @@ jobs:
         working-directory: ./backend
         run: mypy .
 
+      - name: Run Pytest
+        working-directory: ./backend
+        run: pytest
+
   frontend-lint:
     name: Frontend Lint & Type Check
     runs-on: ubuntu-latest
