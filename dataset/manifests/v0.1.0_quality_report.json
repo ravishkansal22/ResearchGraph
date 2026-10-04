@@ -1,0 +1,73 @@
+{
+  "dataset_version": "v0.1.0",
+  "timestamp": "2026-10-04T10:13:08.750441+00:00",
+  "paper_count": 528,
+  "metadata_completeness": {
+    "title_pct": 100.0,
+    "abstract_pct": 51.7,
+    "authors_pct": 92.23,
+    "doi_pct": 97.73,
+    "arxiv_id_pct": 0.0,
+    "publication_date_pct": 100.0,
+    "venue_pct": 90.34,
+    "topics_pct": 60.98,
+    "citations_pct": 100.0,
+    "open_access_pct": 60.23
+  },
+  "deduplication": {
+    "total_input_records": 669,
+    "canonical_papers": 528,
+    "duplicate_count": 141,
+    "duplicate_rate": 0.2108,
+    "unresolved_matches": 6
+  },
+  "source_coverage": {
+    "records_per_source": {
+      "openalex": 350,
+      "crossref": 318
+    },
+    "overlap_matrix": {
+      "openalex": {
+        "openalex": 322,
+        "crossref": 93,
+        "semantic_scholar": 0
+      },
+      "crossref": {
+        "openalex": 93,
+        "crossref": 299,
+        "semantic_scholar": 0
+      },
+      "semantic_scholar": {
+        "openalex": 0,
+        "crossref": 0,
+        "semantic_scholar": 0
+      }
+    }
+  },
+  "temporal_distribution": {
+    "1988": 1,
+    "2010": 2,
+    "2017": 4,
+    "2018": 15,
+    "2019": 16,
+    "2020": 42,
+    "2021": 42,
+    "2022": 67,
+    "2023": 77,
+    "2024": 89,
+    "2025": 84,
+    "2026": 88,
+    "2027": 1
+  },
+  "fulltext_summary": {
+    "available": 318,
+    "details": {}
+  },
+  "relevance_summary": {
+    "total_evaluated": 700,
+    "passed_count": 669,
+    "rejected_count": 31,
+    "pass_rate": 0.9557,
+    "filter_mode": "broad_ai"
+  }
+}

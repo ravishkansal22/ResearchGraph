@@ -1,0 +1,633 @@
+{
+  "$defs": {
+    "Author": {
+      "description": "Normalized author representation.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "first_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Name"
+        },
+        "last_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Name"
+        },
+        "orcid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Orcid"
+        },
+        "affiliations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Affiliations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Author",
+      "type": "object"
+    },
+    "ConfidenceLevel": {
+      "description": "Confidence levels for identity resolution and duplicate detection.",
+      "enum": [
+        "EXACT",
+        "HIGH_CONFIDENCE",
+        "POSSIBLE",
+        "UNRESOLVED"
+      ],
+      "title": "ConfidenceLevel",
+      "type": "string"
+    },
+    "FulltextStatus": {
+      "description": "Status of full-text discovery and artifact acquisition.",
+      "enum": [
+        "FULLTEXT_AVAILABLE",
+        "FULLTEXT_UNAVAILABLE",
+        "FULLTEXT_NOT_CHECKED",
+        "FULLTEXT_FAILED"
+      ],
+      "title": "FulltextStatus",
+      "type": "string"
+    },
+    "Institution": {
+      "description": "Normalized institution representation.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "ror_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ror Id"
+        },
+        "country_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country Code"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Institution",
+      "type": "object"
+    },
+    "OpenAccessInfo": {
+      "description": "Open access status and license information.",
+      "properties": {
+        "is_oa": {
+          "default": false,
+          "title": "Is Oa",
+          "type": "boolean"
+        },
+        "oa_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Oa Status"
+        },
+        "oa_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Oa Url"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        }
+      },
+      "title": "OpenAccessInfo",
+      "type": "object"
+    },
+    "ProvenanceRecord": {
+      "description": "Provenance tracking for data lineage.",
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "source_record_id": {
+          "title": "Source Record Id",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "source_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Version"
+        },
+        "raw_payload_checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Payload Checksum"
+        }
+      },
+      "required": [
+        "source",
+        "source_record_id"
+      ],
+      "title": "ProvenanceRecord",
+      "type": "object"
+    },
+    "SourceRecords": {
+      "description": "Mapping of source names to their respective native identifiers.",
+      "properties": {
+        "openalex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Openalex"
+        },
+        "semantic_scholar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Scholar"
+        },
+        "arxiv": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Arxiv"
+        },
+        "crossref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Crossref"
+        },
+        "other": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Other",
+          "type": "object"
+        }
+      },
+      "title": "SourceRecords",
+      "type": "object"
+    },
+    "Topic": {
+      "description": "Normalized topic, concept, or domain tag.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Topic",
+      "type": "object"
+    },
+    "Venue": {
+      "description": "Normalized publication venue (journal, conference, preprint server).",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "issn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issn"
+        },
+        "isbn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Isbn"
+        },
+        "raw_venue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Venue"
+        }
+      },
+      "title": "Venue",
+      "type": "object"
+    }
+  },
+  "description": "Canonical ResearchGraph Paper Representation.\n\nSource-independent representation of a scientific publication,\nconsolidated from one or multiple scholarly sources with full provenance.",
+  "properties": {
+    "canonical_id": {
+      "description": "Unique ResearchGraph canonical paper identifier (e.g. rg_xxxxx)",
+      "title": "Canonical Id",
+      "type": "string"
+    },
+    "title": {
+      "description": "Normalized paper title",
+      "title": "Title",
+      "type": "string"
+    },
+    "abstract": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Full abstract text if available",
+      "title": "Abstract"
+    },
+    "authors": {
+      "description": "Ordered list of authors with affiliations",
+      "items": {
+        "$ref": "#/$defs/Author"
+      },
+      "title": "Authors",
+      "type": "array"
+    },
+    "institutions": {
+      "description": "Extracted institutions/affiliations",
+      "items": {
+        "$ref": "#/$defs/Institution"
+      },
+      "title": "Institutions",
+      "type": "array"
+    },
+    "venue": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Venue"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Publication venue details"
+    },
+    "publication_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "ISO-8601 date (YYYY-MM-DD) or YYYY",
+      "title": "Publication Date"
+    },
+    "publication_year": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Year of publication",
+      "title": "Publication Year"
+    },
+    "doi": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Normalized DOI string (e.g. 10.1145/1234567)",
+      "title": "Doi"
+    },
+    "arxiv_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Normalized arXiv identifier (e.g. 2401.12345)",
+      "title": "Arxiv Id"
+    },
+    "other_source_ids": {
+      "$ref": "#/$defs/SourceRecords",
+      "description": "Source-specific IDs"
+    },
+    "topics": {
+      "description": "Associated topics and field classifications",
+      "items": {
+        "$ref": "#/$defs/Topic"
+      },
+      "title": "Topics",
+      "type": "array"
+    },
+    "keywords": {
+      "description": "Extracted keywords",
+      "items": {
+        "type": "string"
+      },
+      "title": "Keywords",
+      "type": "array"
+    },
+    "references": {
+      "description": "Referenced DOIs, arXiv IDs, or source IDs",
+      "items": {
+        "type": "string"
+      },
+      "title": "References",
+      "type": "array"
+    },
+    "citation_count": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Total recorded citation count",
+      "title": "Citation Count"
+    },
+    "influential_citation_count": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Influential citations count (if provided)",
+      "title": "Influential Citation Count"
+    },
+    "open_access": {
+      "$ref": "#/$defs/OpenAccessInfo",
+      "description": "Open access status and URL"
+    },
+    "fulltext_available": {
+      "$ref": "#/$defs/FulltextStatus",
+      "default": "FULLTEXT_NOT_CHECKED",
+      "description": "Full-text status"
+    },
+    "fulltext_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Direct URL to accessible full-text PDF/HTML",
+      "title": "Fulltext Url"
+    },
+    "fulltext_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Local relative path to downloaded full-text artifact",
+      "title": "Fulltext Path"
+    },
+    "source_records": {
+      "$ref": "#/$defs/SourceRecords",
+      "description": "Active source records linked"
+    },
+    "provenance": {
+      "description": "Full lineage of source ingestions",
+      "items": {
+        "$ref": "#/$defs/ProvenanceRecord"
+      },
+      "title": "Provenance",
+      "type": "array"
+    },
+    "identity_confidence": {
+      "$ref": "#/$defs/ConfidenceLevel",
+      "default": "EXACT",
+      "description": "Confidence of consolidation"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "canonical_id",
+    "title"
+  ],
+  "title": "CanonicalPaper",
+  "type": "object"
+}

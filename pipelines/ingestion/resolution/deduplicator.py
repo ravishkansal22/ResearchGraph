@@ -1,0 +1,281 @@
+"""Deduplication and Canonical Entity Consolidation.
+
+Groups multi-source paper records into canonical papers while merging metadata
+and preserving complete source lineage and provenance.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections import defaultdict
+from typing import Dict, List, Optional, Set, Tuple
+
+from dataset.schemas.canonical_paper import (
+    Author,
+    CanonicalPaper,
+    ConfidenceLevel,
+    FulltextStatus,
+    Institution,
+    OpenAccessInfo,
+    ProvenanceRecord,
+    SourceRecords,
+    Topic,
+    Venue,
+)
+from pipelines.ingestion.normalizers.text import clean_text, normalize_title_for_matching
+from pipelines.ingestion.resolution.identity import (
+    IdentityResolver,
+    generate_deterministic_canonical_id,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -> CanonicalPaper:
+    """Consolidate two matching paper records into an enriched canonical paper.
+
+    Preserves provenance from both records and prefers the richer metadata fields.
+    """
+    # 1. Deterministic canonical ID derivation
+    doi = base.doi or incoming.doi
+    arxiv_id = base.arxiv_id or incoming.arxiv_id
+
+    # 2. Title (prefer cleaner, longer)
+    title = base.title
+    if len(incoming.title) > len(base.title) and not base.title.isupper():
+        title = incoming.title
+
+    # 3. Abstract (prefer the longer, more comprehensive abstract)
+    abstract = base.abstract
+    if not abstract and incoming.abstract:
+        abstract = incoming.abstract
+    elif incoming.abstract and len(incoming.abstract) > len(abstract or ""):
+        abstract = incoming.abstract
+
+    # 4. Publication Date / Year
+    pub_date = base.publication_date or incoming.publication_date
+    pub_year = base.publication_year or incoming.publication_year
+
+    # 5. Authors & Affiliations (Merge author information, preferring records with ORCIDs/affiliations)
+    merged_authors: List[Author] = []
+    author_names_seen: Set[str] = set()
+
+    for auth in list(base.authors) + list(incoming.authors):
+        norm_name = normalize_title_for_matching(auth.name)
+        if not norm_name:
+            continue
+        if norm_name not in author_names_seen:
+            author_names_seen.add(norm_name)
+            merged_authors.append(auth)
+        else:
+            # If seen, enrich the existing author if the new one has ORCID or more affiliations
+            for existing in merged_authors:
+                if normalize_title_for_matching(existing.name) == norm_name:
+                    if not existing.orcid and auth.orcid:
+                        existing.orcid = auth.orcid
+                    for aff in auth.affiliations:
+                        if aff not in existing.affiliations:
+                            existing.affiliations.append(aff)
+                    break
+
+    # 6. Institutions
+    merged_institutions: List[Institution] = list(base.institutions)
+    inst_names = {i.name for i in merged_institutions}
+    for inst in incoming.institutions:
+        if inst.name not in inst_names:
+            inst_names.add(inst.name)
+            merged_institutions.append(inst)
+
+    # 7. Venue (Prefer peer-reviewed venue over preprint repository if available)
+    venue = base.venue
+    if not venue and incoming.venue:
+        venue = incoming.venue
+    elif venue and incoming.venue:
+        if venue.type == "repository" and incoming.venue.type != "repository":
+            venue = incoming.venue
+
+    # 8. Topics (Deduplicate by normalized name)
+    merged_topics: List[Topic] = list(base.topics)
+    topic_names = {t.name.lower() for t in merged_topics}
+    for top in incoming.topics:
+        if top.name.lower() not in topic_names:
+            topic_names.add(top.name.lower())
+            merged_topics.append(top)
+
+    # 9. Keywords
+    merged_keywords = list(dict.fromkeys(base.keywords + incoming.keywords))
+
+    # 10. References
+    merged_references = list(dict.fromkeys(base.references + incoming.references))
+
+    # 11. Citations
+    citation_count = None
+    if base.citation_count is not None and incoming.citation_count is not None:
+        citation_count = max(base.citation_count, incoming.citation_count)
+    else:
+        citation_count = base.citation_count or incoming.citation_count
+
+    influential_citation_count = (
+        base.influential_citation_count or incoming.influential_citation_count
+    )
+
+    # 12. Open Access & Full text
+    is_oa = base.open_access.is_oa or incoming.open_access.is_oa
+    oa_url = base.open_access.oa_url or incoming.open_access.oa_url
+    oa_status = base.open_access.oa_status or incoming.open_access.oa_status
+    oa_license = base.open_access.license or incoming.open_access.license
+
+    fulltext_url = base.fulltext_url or incoming.fulltext_url
+    fulltext_available = base.fulltext_available
+    if fulltext_url:
+        fulltext_available = FulltextStatus.FULLTEXT_AVAILABLE
+    elif incoming.fulltext_available == FulltextStatus.FULLTEXT_AVAILABLE:
+        fulltext_available = FulltextStatus.FULLTEXT_AVAILABLE
+
+    # 13. Source records mapping
+    merged_source_records = SourceRecords(
+        openalex=base.source_records.openalex or incoming.source_records.openalex,
+        semantic_scholar=base.source_records.semantic_scholar or incoming.source_records.semantic_scholar,
+        arxiv=base.source_records.arxiv or incoming.source_records.arxiv,
+        crossref=base.source_records.crossref or incoming.source_records.crossref,
+        other={**base.source_records.other, **incoming.source_records.other},
+    )
+
+    # 14. Provenance tracking
+    merged_provenance: List[ProvenanceRecord] = list(base.provenance)
+    seen_prov_ids = {(p.source, p.source_record_id) for p in merged_provenance}
+    for prov in incoming.provenance:
+        if (prov.source, prov.source_record_id) not in seen_prov_ids:
+            seen_prov_ids.add((prov.source, prov.source_record_id))
+            merged_provenance.append(prov)
+
+    # Temporary paper to generate canonical id
+    temp_paper = CanonicalPaper(
+        canonical_id="temp",
+        title=title,
+        abstract=abstract,
+        authors=merged_authors,
+        institutions=merged_institutions,
+        venue=venue,
+        publication_date=pub_date,
+        publication_year=pub_year,
+        doi=doi,
+        arxiv_id=arxiv_id,
+        other_source_ids=merged_source_records,
+        topics=merged_topics,
+        keywords=merged_keywords,
+        references=merged_references,
+        citation_count=citation_count,
+        influential_citation_count=influential_citation_count,
+        open_access=OpenAccessInfo(
+            is_oa=is_oa,
+            oa_status=oa_status,
+            oa_url=oa_url,
+            license=oa_license,
+        ),
+        fulltext_available=fulltext_available,
+        fulltext_url=fulltext_url,
+        source_records=merged_source_records,
+        provenance=merged_provenance,
+        identity_confidence=ConfidenceLevel.EXACT,
+    )
+
+    canonical_id = generate_deterministic_canonical_id(temp_paper)
+    temp_paper.canonical_id = canonical_id
+    return temp_paper
+
+
+class Deduplicator:
+    """High-throughput multi-source deduplicator for scientific literature."""
+
+    def __init__(self, resolver: Optional[IdentityResolver] = None):
+        self.resolver = resolver or IdentityResolver()
+
+    def deduplicate(
+        self,
+        papers: List[CanonicalPaper],
+    ) -> Tuple[List[CanonicalPaper], Dict[str, Any]]:
+        """Deduplicate a stream of normalized papers into canonical consolidated papers.
+
+        Returns:
+            (canonical_papers, stats_dict)
+        """
+        logger.info(f"[Deduplicator] Starting deduplication of {len(papers)} input records...")
+
+        # Fast lookup indexes
+        doi_index: Dict[str, CanonicalPaper] = {}
+        arxiv_index: Dict[str, CanonicalPaper] = {}
+        title_index: Dict[str, List[CanonicalPaper]] = defaultdict(list)
+
+        canonical_papers_map: Dict[str, CanonicalPaper] = {}
+        duplicate_count = 0
+        unresolved_count = 0
+
+        for paper in papers:
+            matched_canonical: Optional[CanonicalPaper] = None
+
+            # 1. Match by DOI
+            if paper.doi and paper.doi.lower() in doi_index:
+                matched_canonical = doi_index[paper.doi.lower()]
+
+            # 2. Match by arXiv ID
+            elif paper.arxiv_id and paper.arxiv_id.lower() in arxiv_index:
+                matched_canonical = arxiv_index[paper.arxiv_id.lower()]
+
+            # 3. Match by exact or fuzzy title
+            else:
+                norm_title = normalize_title_for_matching(paper.title)
+                candidate_list = title_index.get(norm_title, [])
+
+                for candidate in candidate_list:
+                    is_match, conf, _ = self.resolver.match_papers(paper, candidate)
+                    if is_match and conf in (ConfidenceLevel.EXACT, ConfidenceLevel.HIGH_CONFIDENCE):
+                        matched_canonical = candidate
+                        break
+                    elif conf == ConfidenceLevel.POSSIBLE:
+                        # Log possible match without automatically merging
+                        unresolved_count += 1
+
+            if matched_canonical is not None:
+                # Merge into existing canonical record
+                merged = merge_two_canonical_papers(matched_canonical, paper)
+                duplicate_count += 1
+
+                # Update primary map and indexes
+                old_id = matched_canonical.canonical_id
+                canonical_papers_map[old_id] = merged
+
+                if merged.doi:
+                    doi_index[merged.doi.lower()] = merged
+                if merged.arxiv_id:
+                    arxiv_index[merged.arxiv_id.lower()] = merged
+                norm_t = normalize_title_for_matching(merged.title)
+                title_index[norm_t] = [merged]
+            else:
+                # Assign deterministic canonical ID
+                paper.canonical_id = generate_deterministic_canonical_id(paper)
+                canonical_papers_map[paper.canonical_id] = paper
+
+                if paper.doi:
+                    doi_index[paper.doi.lower()] = paper
+                if paper.arxiv_id:
+                    arxiv_index[paper.arxiv_id.lower()] = paper
+                norm_t = normalize_title_for_matching(paper.title)
+                title_index[norm_t].append(paper)
+
+        canonical_list = list(canonical_papers_map.values())
+        duplicate_rate = (duplicate_count / len(papers)) if papers else 0.0
+
+        stats = {
+            "total_input_records": len(papers),
+            "canonical_papers_count": len(canonical_list),
+            "duplicates_merged": duplicate_count,
+            "duplicate_rate": round(duplicate_rate, 4),
+            "unresolved_possible_matches": unresolved_count,
+        }
+
+        logger.info(
+            f"[Deduplicator] Completed. Inputs: {len(papers)} -> Canonical: {len(canonical_list)} "
+            f"(Duplicates merged: {duplicate_count}, rate: {duplicate_rate:.1%})"
+        )
+        return canonical_list, stats

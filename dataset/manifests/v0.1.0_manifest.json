@@ -1,0 +1,55 @@
+{
+  "dataset_version": "v0.1.0",
+  "created_at": "2026-10-04T10:13:08.750441+00:00",
+  "schema_version": "0.1.0",
+  "pipeline_version": "0.1.0",
+  "sources": [
+    "openalex",
+    "crossref",
+    "semantic_scholar"
+  ],
+  "paper_count": 528,
+  "fulltext_count": 318,
+  "statistics": {
+    "total_input_records": 669,
+    "canonical_papers": 528,
+    "duplicates_merged": 141,
+    "duplicate_rate": 0.2108,
+    "unresolved_matches": 6,
+    "papers_with_abstracts": 273,
+    "papers_with_doi": 516,
+    "papers_with_arxiv_id": 0,
+    "papers_with_authors": 487,
+    "papers_with_publication_date": 528,
+    "papers_with_citations": 528,
+    "papers_with_references": 190,
+    "papers_with_fulltext": 318,
+    "papers_per_source": {
+      "openalex": 350,
+      "crossref": 318
+    },
+    "papers_per_year": {
+      "1988": 1,
+      "2010": 2,
+      "2017": 4,
+      "2018": 15,
+      "2019": 16,
+      "2020": 42,
+      "2021": 42,
+      "2022": 67,
+      "2023": 77,
+      "2024": 89,
+      "2025": 84,
+      "2026": 88,
+      "2027": 1
+    },
+    "relevance_filtering": {
+      "total_evaluated": 700,
+      "passed_count": 669,
+      "rejected_count": 31,
+      "pass_rate": 0.9557,
+      "filter_mode": "broad_ai"
+    },
+    "fulltext_pipeline": {}
+  }
+}

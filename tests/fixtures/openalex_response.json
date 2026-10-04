@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "count": 1,
+    "db_response_time_ms": 12,
+    "page": 1,
+    "per_page": 25,
+    "next_cursor": null
+  },
+  "results": [
+    {
+      "id": "https://openalex.org/W2741809807",
+      "doi": "https://doi.org/10.48550/arxiv.1706.03762",
+      "title": "Attention Is All You Need",
+      "display_name": "Attention Is All You Need",
+      "publication_year": 2017,
+      "publication_date": "2017-06-12",
+      "ids": {
+        "openalex": "https://openalex.org/W2741809807",
+        "doi": "https://doi.org/10.48550/arxiv.1706.03762",
+        "arxiv": "https://arxiv.org/abs/1706.03762"
+      },
+      "abstract_inverted_index": {
+        "The": [0],
+        "dominant": [1],
+        "sequence": [2, 11],
+        "transduction": [3],
+        "models": [4],
+        "are": [5],
+        "based": [6],
+        "on": [7],
+        "complex": [8],
+        "recurrent": [9],
+        "or": [10],
+        "convolutional": [12],
+        "neural": [13],
+        "networks.": [14]
+      },
+      "authorships": [
+        {
+          "author_position": "first",
+          "author": {
+            "id": "https://openalex.org/A5088276008",
+            "display_name": "Ashish Vaswani",
+            "orcid": "https://orcid.org/0000-0002-1234-5678"
+          },
+          "institutions": [
+            {
+              "id": "https://openalex.org/I1291425158",
+              "display_name": "Google (United States)",
+              "ror": "https://ror.org/034eqgc33",
+              "country_code": "US"
+            }
+          ],
+          "raw_affiliation_strings": ["Google Brain"]
+        },
+        {
+          "author_position": "middle",
+          "author": {
+            "id": "https://openalex.org/A5074213192",
+            "display_name": "Noam Shazeer",
+            "orcid": null
+          },
+          "institutions": [],
+          "raw_affiliation_strings": ["Google Brain"]
+        }
+      ],
+      "primary_location": {
+        "is_oa": true,
+        "landing_page_url": "https://arxiv.org/abs/1706.03762",
+        "pdf_url": "https://arxiv.org/pdf/1706.03762.pdf",
+        "source": {
+          "id": "https://openalex.org/S4306400194",
+          "display_name": "arXiv (Cornell University)",
+          "type": "repository",
+          "issn_l": null
+        }
+      },
+      "open_access": {
+        "is_oa": true,
+        "oa_status": "green",
+        "oa_url": "https://arxiv.org/pdf/1706.03762.pdf"
+      },
+      "concepts": [
+        {
+          "id": "https://openalex.org/C41008148",
+          "display_name": "Computer science",
+          "score": 0.85
+        },
+        {
+          "id": "https://openalex.org/C154945302",
+          "display_name": "Artificial intelligence",
+          "score": 0.82
+        },
+        {
+          "id": "https://openalex.org/C204321447",
+          "display_name": "Transformer (machine learning model)",
+          "score": 0.79
+        }
+      ],
+      "keywords": [
+        { "display_name": "Attention Mechanism" },
+        { "display_name": "Neural Machine Translation" }
+      ],
+      "cited_by_count": 115000,
+      "referenced_works": [
+        "https://openalex.org/W21008148",
+        "https://openalex.org/W21494530"
+      ]
+    }
+  ]
+}
