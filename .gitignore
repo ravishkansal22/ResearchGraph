@@ -44,6 +44,7 @@ yarn-error.log*
 .next/
 out/
 next-env.d.ts
+*.tsbuildinfo
 
 # Datasets & Data Artifacts (Must NOT be tracked in Git)
 dataset/raw/*
