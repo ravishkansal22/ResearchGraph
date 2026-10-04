@@ -1,0 +1,71 @@
+# Environment Configuration
+.env
+.env.local
+.env.*.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+next-env.d.ts
+
+# Datasets & Data Artifacts (Must NOT be tracked in Git)
+dataset/raw/*
+!dataset/raw/.gitkeep
+dataset/interim/*
+!dataset/interim/.gitkeep
+dataset/processed/*
+!dataset/processed/.gitkeep
+dataset/fulltext/*
+!dataset/fulltext/.gitkeep
+
+# Cache & Local Storage
+.cache/
+data/
+*.sqlite3
+*.db
+
+# OS & IDE Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
