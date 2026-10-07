@@ -68,6 +68,16 @@
       "title": "ConfidenceLevel",
       "type": "string"
     },
+    "DocumentProcessingStatus": {
+      "description": "Status of document parsing and text extraction.",
+      "enum": [
+        "NOT_PROCESSED",
+        "PARSED",
+        "PARSE_FAILED"
+      ],
+      "title": "DocumentProcessingStatus",
+      "type": "string"
+    },
     "DocumentType": {
       "description": "Classification of the scientific document.",
       "enum": [
@@ -84,20 +94,22 @@
       "title": "DocumentType",
       "type": "string"
     },
-    "FulltextStatus": {
+    "FullTextAcquisitionStatus": {
       "description": "Status of full-text discovery and artifact acquisition.",
       "enum": [
-        "DISCOVERABLE",
-        "DOWNLOADED",
-        "UNAVAILABLE",
         "NOT_CHECKED",
+        "DISCOVERABLE",
+        "QUEUED",
+        "DOWNLOADING",
+        "DOWNLOADED",
         "FAILED",
+        "UNAVAILABLE",
         "DISCOVERABLE",
         "UNAVAILABLE",
         "NOT_CHECKED",
         "FAILED"
       ],
-      "title": "FulltextStatus",
+      "title": "FullTextAcquisitionStatus",
       "type": "string"
     },
     "Institution": {
@@ -646,12 +658,12 @@
       "description": "Open access status and URL"
     },
     "fulltext_status": {
-      "$ref": "#/$defs/FulltextStatus",
+      "$ref": "#/$defs/FullTextAcquisitionStatus",
       "default": "NOT_CHECKED",
       "description": "Explicit full-text status"
     },
     "fulltext_available": {
-      "$ref": "#/$defs/FulltextStatus",
+      "$ref": "#/$defs/FullTextAcquisitionStatus",
       "default": "NOT_CHECKED",
       "description": "Backward-compatible status flag"
     },
@@ -680,6 +692,37 @@
       "default": null,
       "description": "Local relative path to downloaded full-text artifact",
       "title": "Fulltext Path"
+    },
+    "file_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Cryptographic SHA-256 hash of acquired fulltext artifact",
+      "title": "File Hash"
+    },
+    "file_size_bytes": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Physical size of acquired file in bytes",
+      "title": "File Size Bytes"
+    },
+    "document_processing_status": {
+      "$ref": "#/$defs/DocumentProcessingStatus",
+      "default": "NOT_PROCESSED",
+      "description": "Downstream document parsing and extraction status"
     },
     "source_records": {
       "$ref": "#/$defs/SourceRecords",

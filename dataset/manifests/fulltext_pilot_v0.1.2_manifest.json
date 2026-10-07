@@ -1,0 +1,39 @@
+{
+  "experiment_version": "v0.1.2-fulltext-pilot",
+  "created_at": "2026-10-07T14:24:35.080045+00:00",
+  "total_attempted": 25,
+  "downloaded_count": 8,
+  "valid_pdf_count": 8,
+  "parsed_count": 8,
+  "unavailable_count": 7,
+  "failed_count": 10,
+  "success_rate": 0.32,
+  "storage_metrics": {
+    "storage_before_bytes": 0,
+    "storage_after_bytes": 9638234,
+    "total_storage_used_bytes": 9638234,
+    "total_storage_used_mb": 9.19,
+    "avg_pdf_size_bytes": 1135383.38,
+    "avg_pdf_size_kb": 1108.77,
+    "median_pdf_size_bytes": 1015091,
+    "largest_pdf_bytes": 3069674,
+    "smallest_pdf_bytes": 168037
+  },
+  "source_breakdown": {
+    "none": 7,
+    "direct_pdf": 10,
+    "repository": 1,
+    "open_access": 7
+  },
+  "validation_breakdown": {
+    "UNAVAILABLE": 7,
+    "PAYWALL": 3,
+    "HTML_NOT_PDF": 7,
+    "SUCCESS_PDF": 8
+  },
+  "idempotency_verification": {
+    "tested": true,
+    "success": true
+  },
+  "total_duration_seconds": 64.11
+}

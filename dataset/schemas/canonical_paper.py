@@ -19,19 +19,47 @@ class ConfidenceLevel(str, Enum):
     UNRESOLVED = "UNRESOLVED"            # Conflicting signals or insufficient overlap to merge
 
 
-class FulltextStatus(str, Enum):
+class FullTextAcquisitionStatus(str, Enum):
     """Status of full-text discovery and artifact acquisition."""
+    NOT_CHECKED = "NOT_CHECKED"          # Full-text discovery/acquisition has not been attempted
     DISCOVERABLE = "DISCOVERABLE"        # Legitimate OA URL / PDF link verified in metadata
-    DOWNLOADED = "DOWNLOADED"            # Artifact physically acquired and stored locally
-    UNAVAILABLE = "UNAVAILABLE"          # Confirmed closed access / paywalled / no OA link
-    NOT_CHECKED = "NOT_CHECKED"          # OA discovery has not been evaluated
+    QUEUED = "QUEUED"                    # Scheduled for on-demand fetch
+    DOWNLOADING = "DOWNLOADING"          # HTTP acquisition stream in progress
+    DOWNLOADED = "DOWNLOADED"            # Artifact physically acquired and stored locally in cache
     FAILED = "FAILED"                    # Acquisition attempted but failed (e.g. 403, 404, timeout)
+    UNAVAILABLE = "UNAVAILABLE"          # Confirmed closed access / paywalled / no legitimate OA link
 
-    # Backward-compatibility aliases for v0.1.0 pipelines
+    # Backward-compatibility aliases for v0.1.0/v0.1.1 pipelines
     FULLTEXT_AVAILABLE = "DISCOVERABLE"
     FULLTEXT_UNAVAILABLE = "UNAVAILABLE"
     FULLTEXT_NOT_CHECKED = "NOT_CHECKED"
     FULLTEXT_FAILED = "FAILED"
+
+
+# Alias for backward-compatible imports
+FulltextStatus = FullTextAcquisitionStatus
+
+
+class DocumentProcessingStatus(str, Enum):
+    """Status of document parsing and text extraction."""
+    NOT_PROCESSED = "NOT_PROCESSED"
+    PARSED = "PARSED"
+    PARSE_FAILED = "PARSE_FAILED"
+
+
+class PDFValidationStatus(str, Enum):
+    """Validation outcome of acquired document artifact."""
+    NOT_CHECKED = "NOT_CHECKED"          # Validation has not been evaluated
+    SUCCESS_PDF = "SUCCESS_PDF"          # Valid readable PDF with magic bytes
+    HTML_NOT_PDF = "HTML_NOT_PDF"        # HTML landing/error page masquerading as PDF
+    PAYWALL = "PAYWALL"                  # Access denied / paywall subscription required
+    BROKEN_LINK = "BROKEN_LINK"          # HTTP 404 / broken link
+    TIMEOUT = "TIMEOUT"                  # Connection or read timeout
+    HTTP_ERROR = "HTTP_ERROR"            # Non-200 HTTP status (e.g. 403, 500, 502)
+    EMPTY_FILE = "EMPTY_FILE"            # Zero-byte payload received
+    INVALID_PDF = "INVALID_PDF"          # Missing PDF magic header or corrupt structure
+    UNAVAILABLE = "UNAVAILABLE"          # No fulltext URL exists in metadata
+    UNKNOWN = "UNKNOWN"
 
 
 class DocumentType(str, Enum):
@@ -149,6 +177,12 @@ class CanonicalPaper(BaseModel):
     fulltext_available: FulltextStatus = Field(default=FulltextStatus.NOT_CHECKED, description="Backward-compatible status flag")
     fulltext_url: Optional[str] = Field(default=None, description="Direct URL to accessible full-text PDF/HTML")
     fulltext_path: Optional[str] = Field(default=None, description="Local relative path to downloaded full-text artifact")
+    file_hash: Optional[str] = Field(default=None, description="Cryptographic SHA-256 hash of acquired fulltext artifact")
+    file_size_bytes: Optional[int] = Field(default=None, description="Physical size of acquired file in bytes")
+    document_processing_status: DocumentProcessingStatus = Field(
+        default=DocumentProcessingStatus.NOT_PROCESSED,
+        description="Downstream document parsing and extraction status",
+    )
 
     # Lineage and confidence
     source_records: SourceRecords = Field(default_factory=SourceRecords, description="Active source records linked")
@@ -168,6 +202,10 @@ class CanonicalPaper(BaseModel):
                 "AVAILABLE": FulltextStatus.DISCOVERABLE,
                 "FULLTEXT_AVAILABLE": FulltextStatus.DISCOVERABLE,
                 "DISCOVERABLE": FulltextStatus.DISCOVERABLE,
+                "QUEUED": FulltextStatus.QUEUED,
+                "FETCH_QUEUED": FulltextStatus.QUEUED,
+                "DOWNLOADING": FulltextStatus.DOWNLOADING,
+                "FETCHING": FulltextStatus.DOWNLOADING,
                 "DOWNLOADED": FulltextStatus.DOWNLOADED,
                 "FULLTEXT_DOWNLOADED": FulltextStatus.DOWNLOADED,
                 "UNAVAILABLE": FulltextStatus.UNAVAILABLE,
@@ -175,11 +213,37 @@ class CanonicalPaper(BaseModel):
                 "NOT_CHECKED": FulltextStatus.NOT_CHECKED,
                 "FULLTEXT_NOT_CHECKED": FulltextStatus.NOT_CHECKED,
                 "FAILED": FulltextStatus.FAILED,
+                "FETCH_FAILED": FulltextStatus.FAILED,
                 "FULLTEXT_FAILED": FulltextStatus.FAILED,
             }
             if clean in legacy_map:
                 return legacy_map[clean]
         return v
+
+
+class AcquisitionResult(BaseModel):
+    """Detailed diagnostic result of a single full-text acquisition attempt."""
+    canonical_id: str
+    title: str
+    document_type: DocumentType = DocumentType.UNKNOWN
+    source: str
+    fulltext_url: Optional[str] = None
+    source_type: Optional[str] = None  # direct_pdf, arxiv, repository, open_access
+    http_status: Optional[int] = None
+    download_success: bool = False
+    file_size_bytes: int = 0
+    download_time_seconds: float = 0.0
+    mime_type: Optional[str] = None
+    file_hash: Optional[str] = None
+    local_path: Optional[str] = None
+    is_valid_pdf: bool = False
+    validation_status: PDFValidationStatus = PDFValidationStatus.NOT_CHECKED
+    parse_attempted: bool = False
+    parse_success: bool = False
+    parse_error: Optional[str] = None
+    extracted_pages: Optional[int] = None
+    extracted_char_count: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class RawRecord(BaseModel):

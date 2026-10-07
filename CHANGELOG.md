@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-10-07
+
+### Added
+- **Query-Driven On-Demand Full-Text Acquisition Strategy**:
+  - `MetadataCandidateRetriever` (`pipelines/ingestion/fulltext/retrieval.py`): Metadata-first lexical and token-overlap retrieval engine that ranks candidate papers dynamically without downloading the corpus. Gracefully handles missing abstracts via dynamic weight rebalancing.
+  - `PDFValidator` (`pipelines/ingestion/fulltext/validator.py`): Structural validator that checks magic bytes (`%PDF-`), flags HTML landing/error pages masquerading as PDFs, calculates SHA-256 checksums, and verifies basic text extraction feasibility using `pypdf`/`fitz`.
+  - `OnDemandFullTextAcquirer` (`pipelines/ingestion/fulltext/acquirer.py`): On-demand acquirer with multi-tier source priority (direct OA PDF -> arXiv -> institutional repository -> general OA), local cache checking, and idempotency.
+- **Explicit Full-Text Lifecycle States**:
+  - `FullTextAcquisitionStatus`: `NOT_CHECKED`, `DISCOVERABLE`, `QUEUED`, `DOWNLOADING`, `DOWNLOADED`, `FAILED`, `UNAVAILABLE`.
+  - `DocumentProcessingStatus`: `NOT_PROCESSED`, `PARSED`, `PARSE_FAILED`.
+  - `PDFValidationStatus`: `SUCCESS_PDF`, `HTML_NOT_PDF`, `PAYWALL`, `BROKEN_LINK`, `TIMEOUT`, `HTTP_ERROR`, `EMPTY_FILE`, `INVALID_PDF`, `UNAVAILABLE`, `UNKNOWN`.
+  - `AcquisitionResult` model for complete diagnostic metadata.
+- **Pilot Full-Text Experiment & Artifacts (25-paper benchmark)**:
+  - `dataset/manifests/fulltext_pilot_v0.1.2_results.csv`: Complete per-paper diagnostic audit across queries and document types.
+  - `dataset/manifests/fulltext_pilot_v0.1.2_manifest.json`: Experiment summary with measured storage and download metrics.
+  - `dataset/manifests/fulltext_pilot_v0.1.2_report.md`: Comprehensive empirical report and architectural recommendations.
+- **Comprehensive Full-Text Test Suite**:
+  - Added unit tests in `test_candidate_retrieval.py`, `test_pdf_validator.py`, and `test_fulltext_acquirer.py`, expanding test suite to 46 passing tests.
+
+---
+
 ## [0.1.1] - 2026-10-07
 
 ### Added
