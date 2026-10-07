@@ -16,6 +16,7 @@ from dataset.schemas.canonical_paper import (
     Author,
     CanonicalPaper,
     ConfidenceLevel,
+    DocumentType,
     FulltextStatus,
     OpenAccessInfo,
     ProvenanceRecord,
@@ -25,13 +26,14 @@ from dataset.schemas.canonical_paper import (
     Venue,
 )
 from pipelines.ingestion.config import config
+from pipelines.ingestion.normalizers.dates import extract_publication_dates
+from pipelines.ingestion.normalizers.document_type import classify_document_type
 from pipelines.ingestion.normalizers.identifiers import normalize_arxiv_id, normalize_doi
 from pipelines.ingestion.normalizers.text import clean_text, parse_author_name
 from pipelines.ingestion.sources.base import BaseSourceAdapter
 
 logger = logging.getLogger(__name__)
 
-# Atom XML Namespaces used by arXiv API
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 ARXIV_NS = "{http://arxiv.org/schemas/atom}"
 
@@ -40,15 +42,12 @@ def format_arxiv_query(raw_query: str) -> str:
     """Format raw query string into valid arXiv API search_query syntax."""
     cleaned = raw_query.strip()
     if ":" in cleaned:
-        # User already provided arXiv field prefixes (e.g. cat:cs.AI or all:transformer)
         return cleaned
 
-    # For multi-word queries, search in title or abstract for better performance
     words = cleaned.split()
     if len(words) <= 2:
         return f"all:{cleaned}"
     
-    # Format as title or abstract query for fast indexed execution
     return f'ti:"{cleaned}" OR abs:"{cleaned}" OR all:"{words[0]} {words[1]}"'
 
 
@@ -80,10 +79,7 @@ class ArxivAdapter(BaseSourceAdapter):
         sort_order: str = "descending",
         **kwargs: Any,
     ) -> List[RawRecord]:
-        """Search arXiv matching a query (e.g. 'cat:cs.AI OR all:transformer').
-
-        Paginates using start and max_results.
-        """
+        """Search arXiv matching a query."""
         results: List[RawRecord] = []
         start = 0
         batch_size = min(limit, 100)
@@ -233,9 +229,14 @@ class ArxivAdapter(BaseSourceAdapter):
         title = data.get("title") or "Untitled arXiv Paper"
         abstract = data.get("summary")
 
-        pub_date_raw = data.get("published")
-        pub_date = pub_date_raw.split("T")[0] if pub_date_raw and "T" in pub_date_raw else pub_date_raw
-        pub_year = int(pub_date.split("-")[0]) if pub_date and pub_date[:4].isdigit() else None
+        # Document Type
+        doc_type = classify_document_type(source_type="preprint", source="arxiv", title=title)
+
+        # Dates
+        date_info = extract_publication_dates(data, source="arxiv")
+        pub_date = date_info["published_date"]
+        pub_year = date_info["publication_year"]
+        online_pub_date = date_info["online_publication_date"]
 
         doi = normalize_doi(data.get("doi"))
 
@@ -272,9 +273,12 @@ class ArxivAdapter(BaseSourceAdapter):
             canonical_id=canonical_id,
             title=title,
             abstract=abstract,
+            document_type=doc_type,
             authors=authors,
             institutions=[],
             venue=Venue(name="arXiv", type="repository", raw_venue="arXiv preprint"),
+            published_date=pub_date,
+            online_publication_date=online_pub_date,
             publication_date=pub_date,
             publication_year=pub_year,
             doi=doi,
@@ -289,7 +293,8 @@ class ArxivAdapter(BaseSourceAdapter):
                 oa_status="green",
                 oa_url=pdf_url,
             ),
-            fulltext_available=FulltextStatus.FULLTEXT_AVAILABLE,
+            fulltext_status=FulltextStatus.DISCOVERABLE,
+            fulltext_available=FulltextStatus.DISCOVERABLE,
             fulltext_url=pdf_url,
             source_records=source_records,
             provenance=[provenance_rec],

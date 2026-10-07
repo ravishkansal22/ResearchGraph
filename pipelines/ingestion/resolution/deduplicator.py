@@ -14,6 +14,7 @@ from dataset.schemas.canonical_paper import (
     Author,
     CanonicalPaper,
     ConfidenceLevel,
+    DocumentType,
     FulltextStatus,
     Institution,
     OpenAccessInfo,
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -> CanonicalPaper:
     """Consolidate two matching paper records into an enriched canonical paper.
 
-    Preserves provenance from both records and prefers the richer metadata fields.
+    Preserves provenance from both records and prefers richer metadata fields.
     """
     # 1. Deterministic canonical ID derivation
     doi = base.doi or incoming.doi
@@ -52,11 +53,21 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
     elif incoming.abstract and len(incoming.abstract) > len(abstract or ""):
         abstract = incoming.abstract
 
-    # 4. Publication Date / Year
-    pub_date = base.publication_date or incoming.publication_date
-    pub_year = base.publication_year or incoming.publication_year
+    # 4. Document Type
+    doc_type = base.document_type
+    if doc_type in (DocumentType.UNKNOWN, DocumentType.OTHER) and incoming.document_type not in (DocumentType.UNKNOWN, DocumentType.OTHER):
+        doc_type = incoming.document_type
+    elif incoming.document_type in (DocumentType.SURVEY, DocumentType.REVIEW):
+        doc_type = incoming.document_type
 
-    # 5. Authors & Affiliations (Merge author information, preferring records with ORCIDs/affiliations)
+    # 5. Publication Dates & Year
+    pub_date = base.published_date or incoming.published_date or base.publication_date or incoming.publication_date
+    pub_year = base.publication_year or incoming.publication_year
+    online_pub_date = base.online_publication_date or incoming.online_publication_date
+    print_pub_date = base.print_publication_date or incoming.print_publication_date
+    issued_date = base.issued_date or incoming.issued_date
+
+    # 6. Authors & Affiliations (Merge author information, preferring records with ORCIDs/affiliations)
     merged_authors: List[Author] = []
     author_names_seen: Set[str] = set()
 
@@ -68,7 +79,6 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
             author_names_seen.add(norm_name)
             merged_authors.append(auth)
         else:
-            # If seen, enrich the existing author if the new one has ORCID or more affiliations
             for existing in merged_authors:
                 if normalize_title_for_matching(existing.name) == norm_name:
                     if not existing.orcid and auth.orcid:
@@ -78,7 +88,7 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
                             existing.affiliations.append(aff)
                     break
 
-    # 6. Institutions
+    # 7. Institutions
     merged_institutions: List[Institution] = list(base.institutions)
     inst_names = {i.name for i in merged_institutions}
     for inst in incoming.institutions:
@@ -86,7 +96,7 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
             inst_names.add(inst.name)
             merged_institutions.append(inst)
 
-    # 7. Venue (Prefer peer-reviewed venue over preprint repository if available)
+    # 8. Venue (Prefer peer-reviewed venue over preprint repository if available)
     venue = base.venue
     if not venue and incoming.venue:
         venue = incoming.venue
@@ -94,7 +104,7 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
         if venue.type == "repository" and incoming.venue.type != "repository":
             venue = incoming.venue
 
-    # 8. Topics (Deduplicate by normalized name)
+    # 9. Topics (Deduplicate by normalized name)
     merged_topics: List[Topic] = list(base.topics)
     topic_names = {t.name.lower() for t in merged_topics}
     for top in incoming.topics:
@@ -102,13 +112,13 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
             topic_names.add(top.name.lower())
             merged_topics.append(top)
 
-    # 9. Keywords
+    # 10. Keywords
     merged_keywords = list(dict.fromkeys(base.keywords + incoming.keywords))
 
-    # 10. References
+    # 11. References
     merged_references = list(dict.fromkeys(base.references + incoming.references))
 
-    # 11. Citations
+    # 12. Citations
     citation_count = None
     if base.citation_count is not None and incoming.citation_count is not None:
         citation_count = max(base.citation_count, incoming.citation_count)
@@ -119,20 +129,34 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
         base.influential_citation_count or incoming.influential_citation_count
     )
 
-    # 12. Open Access & Full text
+    # 13. Open Access & Full text
     is_oa = base.open_access.is_oa or incoming.open_access.is_oa
     oa_url = base.open_access.oa_url or incoming.open_access.oa_url
     oa_status = base.open_access.oa_status or incoming.open_access.oa_status
     oa_license = base.open_access.license or incoming.open_access.license
 
     fulltext_url = base.fulltext_url or incoming.fulltext_url
-    fulltext_available = base.fulltext_available
-    if fulltext_url:
-        fulltext_available = FulltextStatus.FULLTEXT_AVAILABLE
-    elif incoming.fulltext_available == FulltextStatus.FULLTEXT_AVAILABLE:
-        fulltext_available = FulltextStatus.FULLTEXT_AVAILABLE
+    fulltext_path = base.fulltext_path or incoming.fulltext_path
 
-    # 13. Source records mapping
+    # Hierarchy: DOWNLOADED > DISCOVERABLE > NOT_CHECKED > UNAVAILABLE > FAILED
+    status_ranks = {
+        FulltextStatus.DOWNLOADED: 5,
+        FulltextStatus.DISCOVERABLE: 4,
+        FulltextStatus.NOT_CHECKED: 3,
+        FulltextStatus.UNAVAILABLE: 2,
+        FulltextStatus.FAILED: 1,
+    }
+    
+    base_rank = status_ranks.get(base.fulltext_status, 3)
+    incoming_rank = status_ranks.get(incoming.fulltext_status, 3)
+    
+    fulltext_status = base.fulltext_status if base_rank >= incoming_rank else incoming.fulltext_status
+    if fulltext_url and fulltext_status in (FulltextStatus.NOT_CHECKED, FulltextStatus.UNAVAILABLE):
+        fulltext_status = FulltextStatus.DISCOVERABLE
+    if fulltext_path:
+        fulltext_status = FulltextStatus.DOWNLOADED
+
+    # 14. Source records mapping
     merged_source_records = SourceRecords(
         openalex=base.source_records.openalex or incoming.source_records.openalex,
         semantic_scholar=base.source_records.semantic_scholar or incoming.source_records.semantic_scholar,
@@ -141,7 +165,7 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
         other={**base.source_records.other, **incoming.source_records.other},
     )
 
-    # 14. Provenance tracking
+    # 15. Provenance tracking
     merged_provenance: List[ProvenanceRecord] = list(base.provenance)
     seen_prov_ids = {(p.source, p.source_record_id) for p in merged_provenance}
     for prov in incoming.provenance:
@@ -149,14 +173,18 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
             seen_prov_ids.add((prov.source, prov.source_record_id))
             merged_provenance.append(prov)
 
-    # Temporary paper to generate canonical id
     temp_paper = CanonicalPaper(
         canonical_id="temp",
         title=title,
         abstract=abstract,
+        document_type=doc_type,
         authors=merged_authors,
         institutions=merged_institutions,
         venue=venue,
+        published_date=pub_date,
+        online_publication_date=online_pub_date,
+        print_publication_date=print_pub_date,
+        issued_date=issued_date,
         publication_date=pub_date,
         publication_year=pub_year,
         doi=doi,
@@ -173,8 +201,10 @@ def merge_two_canonical_papers(base: CanonicalPaper, incoming: CanonicalPaper) -
             oa_url=oa_url,
             license=oa_license,
         ),
-        fulltext_available=fulltext_available,
+        fulltext_status=fulltext_status,
+        fulltext_available=fulltext_status,
         fulltext_url=fulltext_url,
+        fulltext_path=fulltext_path,
         source_records=merged_source_records,
         provenance=merged_provenance,
         identity_confidence=ConfidenceLevel.EXACT,
@@ -195,14 +225,9 @@ class Deduplicator:
         self,
         papers: List[CanonicalPaper],
     ) -> Tuple[List[CanonicalPaper], Dict[str, Any]]:
-        """Deduplicate a stream of normalized papers into canonical consolidated papers.
-
-        Returns:
-            (canonical_papers, stats_dict)
-        """
+        """Deduplicate a stream of normalized papers into canonical consolidated papers."""
         logger.info(f"[Deduplicator] Starting deduplication of {len(papers)} input records...")
 
-        # Fast lookup indexes
         doi_index: Dict[str, CanonicalPaper] = {}
         arxiv_index: Dict[str, CanonicalPaper] = {}
         title_index: Dict[str, List[CanonicalPaper]] = defaultdict(list)
@@ -210,6 +235,7 @@ class Deduplicator:
         canonical_papers_map: Dict[str, CanonicalPaper] = {}
         duplicate_count = 0
         unresolved_count = 0
+        unresolved_candidates: List[Dict[str, Any]] = []
 
         for paper in papers:
             matched_canonical: Optional[CanonicalPaper] = None
@@ -228,20 +254,24 @@ class Deduplicator:
                 candidate_list = title_index.get(norm_title, [])
 
                 for candidate in candidate_list:
-                    is_match, conf, _ = self.resolver.match_papers(paper, candidate)
+                    is_match, conf, reason = self.resolver.match_papers(paper, candidate)
                     if is_match and conf in (ConfidenceLevel.EXACT, ConfidenceLevel.HIGH_CONFIDENCE):
                         matched_canonical = candidate
                         break
                     elif conf == ConfidenceLevel.POSSIBLE:
-                        # Log possible match without automatically merging
                         unresolved_count += 1
+                        unresolved_candidates.append({
+                            "incoming_title": paper.title,
+                            "candidate_title": candidate.title,
+                            "incoming_id": paper.canonical_id,
+                            "candidate_id": candidate.canonical_id,
+                            "reason": reason,
+                        })
 
             if matched_canonical is not None:
-                # Merge into existing canonical record
                 merged = merge_two_canonical_papers(matched_canonical, paper)
                 duplicate_count += 1
 
-                # Update primary map and indexes
                 old_id = matched_canonical.canonical_id
                 canonical_papers_map[old_id] = merged
 
@@ -252,7 +282,6 @@ class Deduplicator:
                 norm_t = normalize_title_for_matching(merged.title)
                 title_index[norm_t] = [merged]
             else:
-                # Assign deterministic canonical ID
                 paper.canonical_id = generate_deterministic_canonical_id(paper)
                 canonical_papers_map[paper.canonical_id] = paper
 
@@ -272,6 +301,7 @@ class Deduplicator:
             "duplicates_merged": duplicate_count,
             "duplicate_rate": round(duplicate_rate, 4),
             "unresolved_possible_matches": unresolved_count,
+            "unresolved_details": unresolved_candidates,
         }
 
         logger.info(

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] - 2026-10-07
+
+### Added
+- **Document Type Classification**:
+  - Standardized `DocumentType` enum (`RESEARCH_ARTICLE`, `CONFERENCE_PAPER`, `REVIEW`, `SURVEY`, `BOOK_CHAPTER`, `EDITORIAL`, `FRONT_MATTER`, `OTHER`, `UNKNOWN`).
+  - Added document type normalizer (`pipelines/ingestion/normalizers/document_type.py`) mapping heterogeneous source types and applying title heuristic cues.
+- **Granular Publication Date Model**:
+  - Added structured date fields (`online_publication_date`, `print_publication_date`, `issued_date`, `published_date`, `publication_year`) in `CanonicalPaper` schema.
+  - Added publication date normalizer (`pipelines/ingestion/normalizers/dates.py`) supporting Crossref date-parts and preserving advance print dates (e.g. 2027 book chapters) without confusing historical research availability.
+- **Full-Text Status Clarification**:
+  - Explicit distinction between `DISCOVERABLE` (OA link available in metadata) and `DOWNLOADED` (physical artifact stored locally), resolving ambiguous `FULLTEXT_AVAILABLE` nomenclature.
+- **Reproducible Dataset Audit Benchmarks**:
+  - `dataset/manifests/v0.1.1_relevance_audit.csv`: Deterministic 100-paper evaluation sample (seed 42) with pending human review labels (`CORE_AI`, `AI_ADJACENT`, `NOT_RELEVANT`).
+  - `dataset/manifests/v0.1.1_dedup_audit.csv`: Deterministic 30-case deduplication audit sample analyzing multi-signal matches and resolving ambiguous candidate pairs.
+- **Dedicated Test Coverage**:
+  - Added test suites for document type classification (`test_document_type.py`), granular date models (`test_dates.py`), and full-text status distinctions (`test_fulltext_status.py`), bringing total passing tests to 35.
+
+### Changed
+- Upgraded `schema_version` to `0.2.0`.
+- Regenerated dataset release artifacts in `dataset/processed/v0.1.1/` (Parquet and JSONL), leaving `v0.1.0` immutable.
+- Updated `QualityReporter` with exact metadata completeness percentages, document type breakdown, and separated discovery/download metrics.
+
+---
+
 ## [0.1.0] - 2026-10-04
 
 ### Added

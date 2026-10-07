@@ -15,6 +15,7 @@ from dataset.schemas.canonical_paper import (
     Author,
     CanonicalPaper,
     ConfidenceLevel,
+    DocumentType,
     FulltextStatus,
     OpenAccessInfo,
     ProvenanceRecord,
@@ -24,6 +25,8 @@ from dataset.schemas.canonical_paper import (
     Venue,
 )
 from pipelines.ingestion.config import config
+from pipelines.ingestion.normalizers.dates import extract_publication_dates
+from pipelines.ingestion.normalizers.document_type import classify_document_type
 from pipelines.ingestion.normalizers.identifiers import normalize_arxiv_id, normalize_doi
 from pipelines.ingestion.normalizers.text import clean_text, parse_author_name
 from pipelines.ingestion.sources.base import BaseSourceAdapter
@@ -38,7 +41,7 @@ class SemanticScholarAdapter(BaseSourceAdapter):
     DEFAULT_FIELDS = (
         "paperId,title,abstract,authors,year,venue,publicationDate,externalIds,"
         "isOpenAccess,openAccessPdf,fieldsOfStudy,s2FieldsOfStudy,citationCount,"
-        "influentialCitationCount,referenceCount"
+        "influentialCitationCount,referenceCount,publicationTypes"
     )
 
     def __init__(
@@ -46,8 +49,10 @@ class SemanticScholarAdapter(BaseSourceAdapter):
         api_key: Optional[str] = config.SEMANTIC_SCHOLAR_API_KEY,
         rate_limit_delay: float = config.SEMANTIC_SCHOLAR_RATE_LIMIT_DELAY,
     ):
-        super().__init__(source_name="semantic_scholar", rate_limit_delay=rate_limit_delay)
         self.api_key = api_key
+        # If API key is provided, rate limit delay can be faster; otherwise, enforce polite 1s delay
+        effective_delay = 0.2 if self.api_key else rate_limit_delay
+        super().__init__(source_name="semantic_scholar", rate_limit_delay=effective_delay)
 
     def _get_default_headers(self) -> Dict[str, str]:
         headers = super()._get_default_headers()
@@ -64,10 +69,7 @@ class SemanticScholarAdapter(BaseSourceAdapter):
         fields_of_study: Optional[str] = None,
         **kwargs: Any,
     ) -> List[RawRecord]:
-        """Search Semantic Scholar papers matching a query.
-
-        Uses offset-based pagination.
-        """
+        """Search Semantic Scholar papers matching a query."""
         results: List[RawRecord] = []
         offset = 0
         batch_size = min(limit, 100)
@@ -152,8 +154,16 @@ class SemanticScholarAdapter(BaseSourceAdapter):
         title = clean_text(data.get("title")) or "Untitled Paper"
         abstract = clean_text(data.get("abstract"))
 
-        pub_date = data.get("publicationDate")
-        pub_year = data.get("year")
+        # Document Type
+        pub_types = data.get("publicationTypes") or []
+        raw_type = pub_types[0] if pub_types else None
+        doc_type = classify_document_type(source_type=raw_type, source="semantic_scholar", title=title)
+
+        # Dates
+        date_info = extract_publication_dates(data, source="semantic_scholar")
+        pub_date = date_info["published_date"]
+        pub_year = date_info["publication_year"]
+        online_pub_date = date_info["online_publication_date"]
 
         # External IDs
         ext_ids = data.get("externalIds") or {}
@@ -197,11 +207,11 @@ class SemanticScholarAdapter(BaseSourceAdapter):
         oa_pdf = data.get("openAccessPdf") or {}
         fulltext_url = oa_pdf.get("url") if isinstance(oa_pdf, dict) else None
 
-        fulltext_status = FulltextStatus.FULLTEXT_NOT_CHECKED
+        fulltext_status = FulltextStatus.NOT_CHECKED
         if fulltext_url:
-            fulltext_status = FulltextStatus.FULLTEXT_AVAILABLE
+            fulltext_status = FulltextStatus.DISCOVERABLE
         elif not is_oa:
-            fulltext_status = FulltextStatus.FULLTEXT_UNAVAILABLE
+            fulltext_status = FulltextStatus.UNAVAILABLE
 
         # Canonical ID seed
         canonical_id = f"rg_{uuid.uuid5(uuid.NAMESPACE_URL, f'semantic_scholar:{paper_id}').hex[:12]}"
@@ -221,9 +231,12 @@ class SemanticScholarAdapter(BaseSourceAdapter):
             canonical_id=canonical_id,
             title=title,
             abstract=abstract,
+            document_type=doc_type,
             authors=authors,
             institutions=[],
             venue=venue,
+            published_date=pub_date,
+            online_publication_date=online_pub_date,
             publication_date=pub_date,
             publication_year=pub_year,
             doi=doi,
@@ -239,6 +252,7 @@ class SemanticScholarAdapter(BaseSourceAdapter):
                 oa_status="gold" if is_oa else "closed",
                 oa_url=fulltext_url,
             ),
+            fulltext_status=fulltext_status,
             fulltext_available=fulltext_status,
             fulltext_url=fulltext_url,
             source_records=source_records,

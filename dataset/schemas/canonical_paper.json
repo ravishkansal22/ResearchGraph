@@ -68,13 +68,34 @@
       "title": "ConfidenceLevel",
       "type": "string"
     },
+    "DocumentType": {
+      "description": "Classification of the scientific document.",
+      "enum": [
+        "RESEARCH_ARTICLE",
+        "CONFERENCE_PAPER",
+        "REVIEW",
+        "SURVEY",
+        "BOOK_CHAPTER",
+        "EDITORIAL",
+        "FRONT_MATTER",
+        "OTHER",
+        "UNKNOWN"
+      ],
+      "title": "DocumentType",
+      "type": "string"
+    },
     "FulltextStatus": {
       "description": "Status of full-text discovery and artifact acquisition.",
       "enum": [
-        "FULLTEXT_AVAILABLE",
-        "FULLTEXT_UNAVAILABLE",
-        "FULLTEXT_NOT_CHECKED",
-        "FULLTEXT_FAILED"
+        "DISCOVERABLE",
+        "DOWNLOADED",
+        "UNAVAILABLE",
+        "NOT_CHECKED",
+        "FAILED",
+        "DISCOVERABLE",
+        "UNAVAILABLE",
+        "NOT_CHECKED",
+        "FAILED"
       ],
       "title": "FulltextStatus",
       "type": "string"
@@ -337,7 +358,7 @@
       "type": "object"
     },
     "Venue": {
-      "description": "Normalized publication venue (journal, conference, preprint server).",
+      "description": "Normalized publication venue (journal, conference, preprint server, book series).",
       "properties": {
         "name": {
           "anyOf": [
@@ -429,6 +450,11 @@
       "description": "Full abstract text if available",
       "title": "Abstract"
     },
+    "document_type": {
+      "$ref": "#/$defs/DocumentType",
+      "default": "UNKNOWN",
+      "description": "Classified document type"
+    },
     "authors": {
       "description": "Ordered list of authors with affiliations",
       "items": {
@@ -457,6 +483,58 @@
       "default": null,
       "description": "Publication venue details"
     },
+    "published_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Primary resolved publication date (YYYY-MM-DD or YYYY)",
+      "title": "Published Date"
+    },
+    "online_publication_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Date first published or made available online",
+      "title": "Online Publication Date"
+    },
+    "print_publication_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Date of print/volume publication",
+      "title": "Print Publication Date"
+    },
+    "issued_date": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Formal issue or copyright registration date",
+      "title": "Issued Date"
+    },
     "publication_date": {
       "anyOf": [
         {
@@ -467,7 +545,7 @@
         }
       ],
       "default": null,
-      "description": "ISO-8601 date (YYYY-MM-DD) or YYYY",
+      "description": "Backward-compatible alias for primary publication date",
       "title": "Publication Date"
     },
     "publication_year": {
@@ -567,10 +645,15 @@
       "$ref": "#/$defs/OpenAccessInfo",
       "description": "Open access status and URL"
     },
+    "fulltext_status": {
+      "$ref": "#/$defs/FulltextStatus",
+      "default": "NOT_CHECKED",
+      "description": "Explicit full-text status"
+    },
     "fulltext_available": {
       "$ref": "#/$defs/FulltextStatus",
-      "default": "FULLTEXT_NOT_CHECKED",
-      "description": "Full-text status"
+      "default": "NOT_CHECKED",
+      "description": "Backward-compatible status flag"
     },
     "fulltext_url": {
       "anyOf": [

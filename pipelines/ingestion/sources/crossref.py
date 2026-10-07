@@ -15,6 +15,7 @@ from dataset.schemas.canonical_paper import (
     Author,
     CanonicalPaper,
     ConfidenceLevel,
+    DocumentType,
     FulltextStatus,
     Institution,
     OpenAccessInfo,
@@ -25,6 +26,8 @@ from dataset.schemas.canonical_paper import (
     Venue,
 )
 from pipelines.ingestion.config import config
+from pipelines.ingestion.normalizers.dates import extract_publication_dates
+from pipelines.ingestion.normalizers.document_type import classify_document_type
 from pipelines.ingestion.normalizers.identifiers import normalize_doi, normalize_orcid
 from pipelines.ingestion.normalizers.text import clean_text, parse_author_name
 from pipelines.ingestion.sources.base import BaseSourceAdapter
@@ -42,8 +45,8 @@ class CrossrefAdapter(BaseSourceAdapter):
         mailto: Optional[str] = config.CROSSREF_MAILTO,
         rate_limit_delay: float = config.CROSSREF_RATE_LIMIT_DELAY,
     ):
-        super().__init__(source_name="crossref", rate_limit_delay=rate_limit_delay)
         self.mailto = mailto
+        super().__init__(source_name="crossref", rate_limit_delay=rate_limit_delay)
 
     def _get_default_headers(self) -> Dict[str, str]:
         headers = super()._get_default_headers()
@@ -59,10 +62,7 @@ class CrossrefAdapter(BaseSourceAdapter):
         filter_param: Optional[str] = None,
         **kwargs: Any,
     ) -> List[RawRecord]:
-        """Search Crossref works for a query string.
-
-        Paginates using rows and offset or cursor.
-        """
+        """Search Crossref works for a query string."""
         results: List[RawRecord] = []
         offset = 0
         batch_size = min(limit, 100)
@@ -157,25 +157,17 @@ class CrossrefAdapter(BaseSourceAdapter):
         # Abstract
         abstract = clean_text(data.get("abstract"))
 
-        # Publication Date
-        pub_date: Optional[str] = None
-        pub_year: Optional[int] = None
-        date_obj = (
-            data.get("published-print")
-            or data.get("published-online")
-            or data.get("created")
-            or {}
-        )
-        date_parts = date_obj.get("date-parts", [])
-        if date_parts and isinstance(date_parts[0], list) and date_parts[0]:
-            parts = date_parts[0]
-            pub_year = parts[0]
-            if len(parts) == 3:
-                pub_date = f"{parts[0]:04d}-{parts[1]:02d}-{parts[2]:02d}"
-            elif len(parts) == 2:
-                pub_date = f"{parts[0]:04d}-{parts[1]:02d}"
-            else:
-                pub_date = f"{parts[0]:04d}"
+        # Document Type
+        raw_type = data.get("type")
+        doc_type = classify_document_type(source_type=raw_type, source="crossref", title=title)
+
+        # Dates
+        date_info = extract_publication_dates(data, source="crossref")
+        pub_date = date_info["published_date"]
+        pub_year = date_info["publication_year"]
+        online_pub_date = date_info["online_publication_date"]
+        print_pub_date = date_info["print_publication_date"]
+        issued_date = date_info["issued_date"]
 
         # DOI
         doi = normalize_doi(data.get("DOI") or raw_doi)
@@ -239,7 +231,7 @@ class CrossrefAdapter(BaseSourceAdapter):
                 fulltext_url = link_obj.get("URL")
 
         fulltext_status = (
-            FulltextStatus.FULLTEXT_AVAILABLE if fulltext_url else FulltextStatus.FULLTEXT_NOT_CHECKED
+            FulltextStatus.DISCOVERABLE if fulltext_url else FulltextStatus.NOT_CHECKED
         )
 
         canonical_id = f"rg_{uuid.uuid5(uuid.NAMESPACE_URL, f'crossref:{doi or raw_doi}').hex[:12]}"
@@ -258,9 +250,14 @@ class CrossrefAdapter(BaseSourceAdapter):
             canonical_id=canonical_id,
             title=title,
             abstract=abstract,
+            document_type=doc_type,
             authors=authors,
             institutions=institutions,
             venue=venue,
+            published_date=pub_date,
+            online_publication_date=online_pub_date,
+            print_publication_date=print_pub_date,
+            issued_date=issued_date,
             publication_date=pub_date,
             publication_year=pub_year,
             doi=doi,
@@ -275,6 +272,7 @@ class CrossrefAdapter(BaseSourceAdapter):
                 oa_status="gold" if fulltext_url else None,
                 oa_url=fulltext_url,
             ),
+            fulltext_status=fulltext_status,
             fulltext_available=fulltext_status,
             fulltext_url=fulltext_url,
             source_records=source_records,

@@ -92,8 +92,12 @@ class DatasetStorageManager:
                 flat_row = {
                     "canonical_id": str(d.get("canonical_id") or ""),
                     "title": str(d.get("title") or ""),
+                    "document_type": str(d.get("document_type") or "UNKNOWN"),
                     "abstract": str(d.get("abstract")) if d.get("abstract") is not None else None,
-                    "publication_date": str(d.get("publication_date")) if d.get("publication_date") is not None else None,
+                    "published_date": str(d.get("published_date")) if d.get("published_date") is not None else (str(d.get("publication_date")) if d.get("publication_date") is not None else None),
+                    "online_publication_date": str(d.get("online_publication_date")) if d.get("online_publication_date") is not None else None,
+                    "print_publication_date": str(d.get("print_publication_date")) if d.get("print_publication_date") is not None else None,
+                    "issued_date": str(d.get("issued_date")) if d.get("issued_date") is not None else None,
                     "publication_year": int(d.get("publication_year")) if d.get("publication_year") is not None else None,
                     "doi": str(d.get("doi")) if d.get("doi") is not None else None,
                     "arxiv_id": str(d.get("arxiv_id")) if d.get("arxiv_id") is not None else None,
@@ -105,7 +109,8 @@ class DatasetStorageManager:
                     "citation_count": int(d.get("citation_count")) if d.get("citation_count") is not None else None,
                     "influential_citation_count": int(d.get("influential_citation_count")) if d.get("influential_citation_count") is not None else None,
                     "is_open_access": bool(d.get("open_access", {}).get("is_oa", False)),
-                    "fulltext_available": str(d.get("fulltext_available")),
+                    "fulltext_status": str(d.get("fulltext_status") or "NOT_CHECKED"),
+                    "fulltext_available": str(d.get("fulltext_available") or "NOT_CHECKED"),
                     "fulltext_url": str(d.get("fulltext_url")) if d.get("fulltext_url") is not None else None,
                     "fulltext_path": str(d.get("fulltext_path")) if d.get("fulltext_path") is not None else None,
                     "sources": [str(p.get("source")) for p in d.get("provenance", []) if p.get("source")],
@@ -114,12 +119,15 @@ class DatasetStorageManager:
                 }
                 flat_rows.append(flat_row)
 
-            # Define explicit schema to avoid inference ambiguities on mixed string/numeric columns
             explicit_schema = {
                 "canonical_id": pl.Utf8,
                 "title": pl.Utf8,
+                "document_type": pl.Utf8,
                 "abstract": pl.Utf8,
-                "publication_date": pl.Utf8,
+                "published_date": pl.Utf8,
+                "online_publication_date": pl.Utf8,
+                "print_publication_date": pl.Utf8,
+                "issued_date": pl.Utf8,
                 "publication_year": pl.Int64,
                 "doi": pl.Utf8,
                 "arxiv_id": pl.Utf8,
@@ -131,6 +139,7 @@ class DatasetStorageManager:
                 "citation_count": pl.Int64,
                 "influential_citation_count": pl.Int64,
                 "is_open_access": pl.Boolean,
+                "fulltext_status": pl.Utf8,
                 "fulltext_available": pl.Utf8,
                 "fulltext_url": pl.Utf8,
                 "fulltext_path": pl.Utf8,

@@ -1,0 +1,98 @@
+{
+  "dataset_version": "v0.1.1",
+  "timestamp": "2026-10-07T13:26:32.602841+00:00",
+  "paper_count": 528,
+  "metadata_completeness": {
+    "title_count": 528,
+    "title_pct": 100.0,
+    "abstract_count": 272,
+    "abstract_pct": 51.52,
+    "authors_count": 487,
+    "authors_pct": 92.23,
+    "doi_count": 516,
+    "doi_pct": 97.73,
+    "arxiv_id_count": 0,
+    "arxiv_id_pct": 0.0,
+    "publication_date_count": 528,
+    "publication_date_pct": 100.0,
+    "venue_count": 477,
+    "venue_pct": 90.34,
+    "topics_count": 322,
+    "topics_pct": 60.98,
+    "citations_count": 528,
+    "citations_pct": 100.0,
+    "references_count": 190,
+    "references_pct": 35.98,
+    "open_access_count": 318,
+    "open_access_pct": 60.23,
+    "document_type_classified_count": 523,
+    "document_type_classified_pct": 99.05
+  },
+  "deduplication": {
+    "total_input_records": 669,
+    "canonical_papers": 528,
+    "duplicate_count": 141,
+    "duplicate_rate": 0.2108,
+    "unresolved_matches": 6
+  },
+  "document_types": {
+    "BOOK_CHAPTER": 185,
+    "CONFERENCE_PAPER": 50,
+    "EDITORIAL": 2,
+    "FRONT_MATTER": 5,
+    "OTHER": 11,
+    "RESEARCH_ARTICLE": 222,
+    "REVIEW": 39,
+    "SURVEY": 9,
+    "UNKNOWN": 5
+  },
+  "source_coverage": {
+    "records_per_source": {
+      "openalex": 350,
+      "crossref": 318
+    },
+    "overlap_matrix": {
+      "openalex": {
+        "openalex": 322,
+        "crossref": 93
+      },
+      "crossref": {
+        "openalex": 93,
+        "crossref": 299
+      }
+    }
+  },
+  "temporal_distribution": {
+    "1988": 1,
+    "2010": 2,
+    "2012": 2,
+    "2017": 4,
+    "2018": 15,
+    "2019": 18,
+    "2020": 41,
+    "2021": 40,
+    "2022": 69,
+    "2023": 74,
+    "2024": 89,
+    "2025": 84,
+    "2026": 88,
+    "2027": 1
+  },
+  "fulltext_summary": {
+    "discoverable": 318,
+    "downloaded": 0,
+    "details": {
+      "fulltext_discoverable_count": 318,
+      "fulltext_downloaded_count": 0,
+      "download_attempted": 0,
+      "download_succeeded": 0
+    }
+  },
+  "relevance_summary": {
+    "total_evaluated": 700,
+    "passed_count": 669,
+    "rejected_count": 31,
+    "pass_rate": 0.9557,
+    "filter_mode": "broad_ai"
+  }
+}

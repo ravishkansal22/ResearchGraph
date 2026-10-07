@@ -15,6 +15,7 @@ from dataset.schemas.canonical_paper import (
     Author,
     CanonicalPaper,
     ConfidenceLevel,
+    DocumentType,
     FulltextStatus,
     Institution,
     OpenAccessInfo,
@@ -25,6 +26,8 @@ from dataset.schemas.canonical_paper import (
     Venue,
 )
 from pipelines.ingestion.config import config
+from pipelines.ingestion.normalizers.dates import extract_publication_dates
+from pipelines.ingestion.normalizers.document_type import classify_document_type
 from pipelines.ingestion.normalizers.identifiers import normalize_arxiv_id, normalize_doi, normalize_orcid
 from pipelines.ingestion.normalizers.text import (
     clean_text,
@@ -47,9 +50,9 @@ class OpenAlexAdapter(BaseSourceAdapter):
         mailto: Optional[str] = config.OPENALEX_MAILTO,
         rate_limit_delay: float = config.OPENALEX_RATE_LIMIT_DELAY,
     ):
-        super().__init__(source_name="openalex", rate_limit_delay=rate_limit_delay)
         self.api_key = api_key
         self.mailto = mailto
+        super().__init__(source_name="openalex", rate_limit_delay=rate_limit_delay)
 
     def _get_default_headers(self) -> Dict[str, str]:
         headers = super()._get_default_headers()
@@ -65,10 +68,7 @@ class OpenAlexAdapter(BaseSourceAdapter):
         filter_param: Optional[str] = None,
         **kwargs: Any,
     ) -> List[RawRecord]:
-        """Search OpenAlex works matching a query string or concept filter.
-
-        Uses cursor-based pagination for stability across large result sets.
-        """
+        """Search OpenAlex works matching a query string or concept filter."""
         results: List[RawRecord] = []
         cursor = "*"
         per_page = min(limit, 100)
@@ -157,9 +157,16 @@ class OpenAlexAdapter(BaseSourceAdapter):
         title = clean_text(data.get("title") or data.get("display_name")) or "Untitled Paper"
         abstract = reconstruct_openalex_abstract(data.get("abstract_inverted_index"))
 
-        # Publication date & year
-        pub_date = data.get("publication_date")
-        pub_year = data.get("publication_year")
+        # Document Type
+        raw_type = data.get("type")
+        doc_type = classify_document_type(source_type=raw_type, source="openalex", title=title)
+
+        # Dates
+        date_info = extract_publication_dates(data, source="openalex")
+        pub_date = date_info["published_date"]
+        pub_year = date_info["publication_year"]
+        online_pub_date = date_info["online_publication_date"]
+        issued_date = date_info["issued_date"]
 
         # Identifiers
         doi = normalize_doi(data.get("doi"))
@@ -267,15 +274,15 @@ class OpenAlexAdapter(BaseSourceAdapter):
         oa_url = oa_dict.get("oa_url")
 
         fulltext_url = None
-        fulltext_status = FulltextStatus.FULLTEXT_NOT_CHECKED
+        fulltext_status = FulltextStatus.NOT_CHECKED
         if primary_location and primary_location.get("pdf_url"):
             fulltext_url = primary_location.get("pdf_url")
-            fulltext_status = FulltextStatus.FULLTEXT_AVAILABLE
+            fulltext_status = FulltextStatus.DISCOVERABLE
         elif oa_url:
             fulltext_url = oa_url
-            fulltext_status = FulltextStatus.FULLTEXT_AVAILABLE
+            fulltext_status = FulltextStatus.DISCOVERABLE
         elif not is_oa:
-            fulltext_status = FulltextStatus.FULLTEXT_UNAVAILABLE
+            fulltext_status = FulltextStatus.UNAVAILABLE
 
         # Generate canonical ID seed
         canonical_id = f"rg_{uuid.uuid5(uuid.NAMESPACE_URL, f'openalex:{work_id}').hex[:12]}"
@@ -295,9 +302,13 @@ class OpenAlexAdapter(BaseSourceAdapter):
             canonical_id=canonical_id,
             title=title,
             abstract=abstract,
+            document_type=doc_type,
             authors=authors,
             institutions=list(institutions_map.values()),
             venue=venue,
+            published_date=pub_date,
+            online_publication_date=online_pub_date,
+            issued_date=issued_date,
             publication_date=pub_date,
             publication_year=pub_year,
             doi=doi,
@@ -312,6 +323,7 @@ class OpenAlexAdapter(BaseSourceAdapter):
                 oa_status=oa_status,
                 oa_url=oa_url,
             ),
+            fulltext_status=fulltext_status,
             fulltext_available=fulltext_status,
             fulltext_url=fulltext_url,
             source_records=source_records,
