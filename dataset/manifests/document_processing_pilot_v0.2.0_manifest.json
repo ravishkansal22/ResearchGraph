@@ -1,0 +1,144 @@
+{
+  "experiment_version": "v0.2.0-document-processing-pilot",
+  "created_at": "2026-10-08T18:14:08.020016+00:00",
+  "target_input_count": 8,
+  "successfully_processed_count": 8,
+  "success_rate": 1.0,
+  "total_pages_processed": 214,
+  "extracted_pages_count": 214,
+  "usable_page_rate": 1.0,
+  "total_characters_extracted": 632474,
+  "total_words_extracted": 84757,
+  "total_sections_detected": 470,
+  "total_paragraphs_extracted": 2684,
+  "total_sentences_segmented": 5792,
+  "chunk_comparison": {
+    "strategy_a_paragraph_based": {
+      "total_chunks": 663,
+      "avg_chars": 952.0,
+      "min_chars": 3,
+      "max_chars": 4961,
+      "section_boundary_preservation": "100%"
+    },
+    "strategy_b_structure_aware_fixed": {
+      "total_chunks": 807,
+      "avg_chars": 844.7,
+      "min_chars": 15,
+      "max_chars": 1200,
+      "section_boundary_preservation": "100%"
+    }
+  },
+  "recommended_chunking_strategy": "STRATEGY_A_PARAGRAPH",
+  "storage_metrics": {
+    "documents_jsonl_bytes": 8931446,
+    "chunks_parquet_bytes": 214566,
+    "chunks_jsonl_bytes": 1379225,
+    "total_structured_storage_bytes": 10525237
+  },
+  "documents": [
+    {
+      "canonical_id": "rg_doi_b29976e1c44e",
+      "title": "Artificial Intelligence in Cybersecurity: Machine Learning and Deep Learning for Intelligent Threat Detection",
+      "doi": "10.21275/sr26221124055",
+      "pages": 5,
+      "sections": 3,
+      "paragraphs": 13,
+      "sentences": 220,
+      "chunks_strat_a": 12,
+      "chunks_strat_b": 27,
+      "duration_ms": 115.65,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_3891d117baca",
+      "title": "Artificial intelligence and machine learning in cybersecurity: a deep dive into state-of-the-art techniques and future paradigms",
+      "doi": "10.1007/s10115-025-02429-y",
+      "pages": 87,
+      "sections": 274,
+      "paragraphs": 426,
+      "sentences": 1767,
+      "chunks_strat_a": 285,
+      "chunks_strat_b": 373,
+      "duration_ms": 1365.92,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_cb0ceeff2e31",
+      "title": "ARTIFICIAL INTELLIGENCE FOR EPILEPTIC SEIZURE DETECTION AND PREDICTION: A REVIEW OF EEG-BASED MACHINE LEARNING AND DEEP LEARNING METHOD",
+      "doi": "10.70917/ijcisim-2026-2080",
+      "pages": 15,
+      "sections": 21,
+      "paragraphs": 227,
+      "sentences": 420,
+      "chunks_strat_a": 53,
+      "chunks_strat_b": 51,
+      "duration_ms": 230.3,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_da062bd35ba4",
+      "title": "Artificial intelligence, machine learning, deep learning, and big data for circular economy, resilience, and sustainable development",
+      "doi": "10.70593/deepsci.0202012",
+      "pages": 27,
+      "sections": 22,
+      "paragraphs": 499,
+      "sentences": 1190,
+      "chunks_strat_a": 107,
+      "chunks_strat_b": 131,
+      "duration_ms": 569.03,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_7c2fa4c39358",
+      "title": "Navigating the landscape of artificial intelligence, Machine learning and Deep Learning",
+      "doi": "10.62919/geiy8123",
+      "pages": 5,
+      "sections": 17,
+      "paragraphs": 128,
+      "sentences": 232,
+      "chunks_strat_a": 26,
+      "chunks_strat_b": 27,
+      "duration_ms": 131.49,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_4e5057959cae",
+      "title": "Frontiers of Artificial Intelligence and Machine Learning: From Deep Learning Architectures to Industry 5.0 Applications",
+      "doi": "10.62311/nesx/rb-978-81-992251-8-3",
+      "pages": 55,
+      "sections": 92,
+      "paragraphs": 1252,
+      "sentences": 1424,
+      "chunks_strat_a": 102,
+      "chunks_strat_b": 106,
+      "duration_ms": 4117.07,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_5c65e2d95d8f",
+      "title": "Future Directions of Artificial Intelligence, Machine Learning and Deep Learning in Higher Education",
+      "doi": "10.70849/ijsci03022601976",
+      "pages": 14,
+      "sections": 27,
+      "paragraphs": 86,
+      "sentences": 334,
+      "chunks_strat_a": 50,
+      "chunks_strat_b": 56,
+      "duration_ms": 239.67,
+      "status": "SUCCESS"
+    },
+    {
+      "canonical_id": "rg_doi_21feca2c78f6",
+      "title": "Artificial intelligence, machine learning, deep learning, and big data techniques for the advancements of superconducting technology: a road to smarter and intelligent superconductivity",
+      "doi": "10.1088/1361-6668/ace385",
+      "pages": 6,
+      "sections": 14,
+      "paragraphs": 53,
+      "sentences": 205,
+      "chunks_strat_a": 28,
+      "chunks_strat_b": 36,
+      "duration_ms": 251.2,
+      "status": "SUCCESS"
+    }
+  ]
+}
