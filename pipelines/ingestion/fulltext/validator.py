@@ -168,31 +168,30 @@ class PDFValidator:
         extracted_char_count = 0
 
         try:
-            import pypdf
-            reader = pypdf.PdfReader(str(file_path))
-            extracted_pages = len(reader.pages)
+            import fitz
+            doc = fitz.open(str(file_path))
+            extracted_pages = len(doc)
             if extracted_pages > 0:
-                # Extract text from first 2 pages for validation check
                 sample_text = ""
-                for page in reader.pages[:2]:
-                    sample_text += page.extract_text() or ""
+                for i in range(min(2, extracted_pages)):
+                    sample_text += doc[i].get_text() or ""
                 extracted_char_count = len(sample_text)
                 parse_success = True
-        except Exception as pypdf_err:
+            doc.close()
+        except Exception as fitz_err:
             try:
-                import fitz
-                doc = fitz.open(str(file_path))
-                extracted_pages = len(doc)
+                import pypdf
+                reader = pypdf.PdfReader(str(file_path))
+                extracted_pages = len(reader.pages)
                 if extracted_pages > 0:
                     sample_text = ""
-                    for i in range(min(2, extracted_pages)):
-                        sample_text += doc[i].get_text() or ""
+                    for page in reader.pages[:2]:
+                        sample_text += page.extract_text() or ""
                     extracted_char_count = len(sample_text)
                     parse_success = True
-                doc.close()
-            except Exception as fitz_err:
+            except Exception as pypdf_err:
                 parse_success = False
-                parse_error = f"PDF parsing error: pypdf({pypdf_err}), fitz({fitz_err})"
+                parse_error = f"PDF parsing error: fitz({fitz_err}), pypdf({pypdf_err})"
 
         validation_status = PDFValidationStatus.SUCCESS_PDF if parse_success else PDFValidationStatus.INVALID_PDF
         doc_proc_status = DocumentProcessingStatus.PARSED if parse_success else DocumentProcessingStatus.PARSE_FAILED

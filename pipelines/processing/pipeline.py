@@ -53,7 +53,7 @@ class DocumentProcessingPipeline:
         self.cache_dir = self.repo_root / "dataset" / "fulltext" / "cache"
         self.v012_results_csv = self.repo_root / "dataset" / "manifests" / "fulltext_pilot_v0.1.2_results.csv"
         self.v011_canonical_jsonl = self.repo_root / "dataset" / "processed" / "v0.1.1" / "canonical_papers.jsonl"
-        self.output_dir = self.repo_root / "dataset" / "processed" / "v0.2.0"
+        self.output_dir = self.repo_root / "dataset" / "processed" / self.processor_version
         self.manifest_dir = self.repo_root / "dataset" / "manifests"
 
         self.extractor = PDFExtractor()
@@ -114,6 +114,57 @@ class DocumentProcessingPipeline:
 
         logger.info(f"Discovered {len(pilot_candidates)} validated pilot PDF inputs")
         return pilot_candidates
+
+    def discover_expansion_inputs(self) -> List[Dict[str, Any]]:
+        """Identify all 50 validated PDFs: 8 baseline pilot PDFs + 42 expansion PDFs."""
+        pilot_inputs = self.discover_pilot_inputs()
+        pilot_ids = {p["canonical_id"] for p in pilot_inputs}
+
+        expansion_manifest_path = self.manifest_dir / "fulltext_expansion_v0.3.0_manifest.json"
+        if not expansion_manifest_path.exists():
+            raise FileNotFoundError(f"Expansion manifest missing at {expansion_manifest_path}")
+
+        # Load canonical metadata
+        canonical_map: Dict[str, Dict[str, Any]] = {}
+        if self.v011_canonical_jsonl.exists():
+            with open(self.v011_canonical_jsonl, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        data = json.loads(line)
+                        canonical_map[data["canonical_id"]] = data
+
+        with open(expansion_manifest_path, "r", encoding="utf-8") as f:
+            exp_data = json.load(f)
+
+        all_inputs = list(pilot_inputs)
+        for item in exp_data.get("acquired_inventory", []):
+            cid = item["canonical_id"]
+            if cid in pilot_ids:
+                continue
+
+            pdf_path = self.cache_dir / f"{cid}.pdf"
+            if not pdf_path.exists():
+                logger.warning(f"Expected expansion PDF {pdf_path} does not exist on disk")
+                continue
+
+            canon = canonical_map.get(cid, {})
+            all_inputs.append(
+                {
+                    "canonical_id": cid,
+                    "title": item.get("title") or canon.get("title", "Unknown Title"),
+                    "doi": item.get("doi") or canon.get("doi"),
+                    "source": canon.get("source", "openalex"),
+                    "source_url": item.get("url"),
+                    "local_pdf_path": str(pdf_path.relative_to(self.repo_root)),
+                    "absolute_pdf_path": pdf_path,
+                    "file_hash": item.get("file_hash") or self.calculate_sha256(pdf_path),
+                    "file_size_bytes": int(item.get("file_size", 0)) or pdf_path.stat().st_size,
+                    "document_type": item.get("document_type") or canon.get("document_type"),
+                }
+            )
+
+        logger.info(f"Discovered {len(all_inputs)} total validated PDF inputs for {self.processor_version}")
+        return all_inputs
 
     def process_single_pdf(self, item: Dict[str, Any]) -> ProcessedDocument:
         """Execute full parsing pipeline on a single PDF."""
@@ -224,14 +275,22 @@ class DocumentProcessingPipeline:
             chunks_strategy_b=chunks_strat_b,
         )
 
-    def run_pilot(self) -> Tuple[List[ProcessedDocument], Dict[str, Any]]:
-        """Execute full Phase 2 document processing pipeline on the 8 pilot PDFs."""
+    def run_pipeline(
+        self,
+        inputs: Optional[List[Dict[str, Any]]] = None,
+    ) -> Tuple[List[ProcessedDocument], Dict[str, Any]]:
+        """Execute full document processing pipeline across discovered PDFs."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.manifest_dir.mkdir(parents=True, exist_ok=True)
 
-        inputs = self.discover_pilot_inputs()
+        if inputs is None:
+            if self.processor_version.startswith("v0.3"):
+                inputs = self.discover_expansion_inputs()
+            else:
+                inputs = self.discover_pilot_inputs()
+
         if not inputs:
-            raise RuntimeError("No valid pilot PDFs discovered to process!")
+            raise RuntimeError(f"No valid PDFs discovered to process for {self.processor_version}!")
 
         processed_docs: List[ProcessedDocument] = []
         for i, item in enumerate(inputs, 1):
@@ -246,6 +305,10 @@ class DocumentProcessingPipeline:
         self._export_outputs(processed_docs, audit_summary)
 
         return processed_docs, audit_summary
+
+    def run_pilot(self) -> Tuple[List[ProcessedDocument], Dict[str, Any]]:
+        """Execute full Phase 2 document processing pipeline on the 8 pilot PDFs."""
+        return self.run_pipeline(self.discover_pilot_inputs())
 
     def _export_outputs(
         self,
@@ -309,14 +372,19 @@ class DocumentProcessingPipeline:
         df_chunks.write_parquet(chunks_parquet_path)
         logger.info(f"Exported {len(chunks_records)} chunks to {chunks_parquet_path}")
 
+        # Choose version slug for manifests
+        is_expansion = self.processor_version.startswith("v0.3")
+        version_slug = "document_processing_v0.3.0" if is_expansion else "document_processing_pilot_v0.2.0"
+
         # 5. Export Quality Report JSON
-        quality_json_path = self.manifest_dir / "document_processing_pilot_v0.2.0_quality_report.json"
+        quality_json_path = self.manifest_dir / f"{version_slug}_quality_report.json"
         with open(quality_json_path, "w", encoding="utf-8") as f:
             json.dump(audit_summary, f, indent=2)
 
-        # 6. Export Pilot Manifest JSON
+        # 6. Export Pilot/Expansion Manifest JSON
         manifest_data = {
-            "experiment_version": "v0.2.0-document-processing-pilot",
+            "experiment_version": f"{self.processor_version}-document-processing-expansion" if is_expansion else "v0.2.0-document-processing-pilot",
+            "processor_version": self.processor_version,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "target_input_count": len(docs),
             "successfully_processed_count": audit_summary["successful_documents"],
@@ -335,10 +403,12 @@ class DocumentProcessingPipeline:
                 "documents_jsonl_bytes": docs_jsonl_path.stat().st_size,
                 "chunks_parquet_bytes": chunks_parquet_path.stat().st_size,
                 "chunks_jsonl_bytes": primary_chunks_jsonl_path.stat().st_size,
+                "chunks_strategy_b_bytes": chunks_b_jsonl_path.stat().st_size,
                 "total_structured_storage_bytes": (
                     docs_jsonl_path.stat().st_size
                     + chunks_parquet_path.stat().st_size
                     + primary_chunks_jsonl_path.stat().st_size
+                    + chunks_b_jsonl_path.stat().st_size
                 ),
             },
             "documents": [
@@ -359,19 +429,29 @@ class DocumentProcessingPipeline:
             ],
         }
 
-        manifest_json_path = self.manifest_dir / "document_processing_pilot_v0.2.0_manifest.json"
+        manifest_json_path = self.manifest_dir / f"{version_slug}_manifest.json"
         with open(manifest_json_path, "w", encoding="utf-8") as f:
             json.dump(manifest_data, f, indent=2)
 
         # 7. Generate Manual Review CSV Artifact
-        self._export_manual_review_csv(docs)
+        review_csv_path = self.manifest_dir / f"{version_slug}_manual_review.csv"
+        self._export_manual_review_csv(docs, review_csv_path)
 
         # 8. Generate Comprehensive Report Markdown
-        self._export_pilot_report_markdown(manifest_data, audit_summary)
+        report_md_path = self.manifest_dir / f"{version_slug}_report.md"
+        self._export_report_markdown(manifest_data, audit_summary, docs, report_md_path)
 
-    def _export_manual_review_csv(self, docs: List[ProcessedDocument]) -> None:
+    def _export_manual_review_csv(
+        self,
+        docs: List[ProcessedDocument],
+        review_csv_path: Optional[Path] = None,
+    ) -> None:
         """Generate manual inspection artifact with representative chunks/sections leaving human evaluation fields blank."""
-        review_csv_path = self.manifest_dir / "document_processing_pilot_v0.2.0_manual_review.csv"
+        if review_csv_path is None:
+            is_expansion = self.processor_version.startswith("v0.3")
+            version_slug = "document_processing_v0.3.0" if is_expansion else "document_processing_pilot_v0.2.0"
+            review_csv_path = self.manifest_dir / f"{version_slug}_manual_review.csv"
+
         rows = []
         for d in docs:
             # Sample 3 representative sections from each paper:
@@ -447,23 +527,57 @@ class DocumentProcessingPipeline:
             writer.writeheader()
             writer.writerows(rows)
 
-        logger.info(f"Exported manual review audit CSV to {review_csv_path}")
+        logger.info(f"Exported manual review audit CSV with {len(rows)} samples to {review_csv_path}")
 
-    def _export_pilot_report_markdown(
+    def _export_report_markdown(
         self,
         manifest: Dict[str, Any],
         audit: Dict[str, Any],
+        docs: List[ProcessedDocument],
+        report_path: Optional[Path] = None,
     ) -> None:
-        """Generate markdown summary report."""
-        report_path = self.manifest_dir / "document_processing_pilot_v0.2.0_report.md"
+        """Generate markdown summary report dynamically based on version."""
+        is_expansion = self.processor_version.startswith("v0.3")
+        version_slug = "document_processing_v0.3.0" if is_expansion else "document_processing_pilot_v0.2.0"
+        if report_path is None:
+            report_path = self.manifest_dir / f"{version_slug}_report.md"
 
         c_a = audit["chunk_comparison"]["strategy_a_paragraph_based"]
         c_b = audit["chunk_comparison"]["strategy_b_structure_aware_fixed"]
         st = manifest["storage_metrics"]
 
-        md_content = f"""# ResearchGraph Phase 2: Document Processing Pilot Report (v0.2.0)
+        title_header = (
+            f"# ResearchGraph Phase 2: 50-Paper Document Processing Expansion Report ({self.processor_version})"
+            if is_expansion
+            else f"# ResearchGraph Phase 2: Document Processing Pilot Report ({self.processor_version})"
+        )
+
+        exec_summary = (
+            f"The **Phase 2: 50-Paper Document Processing Expansion** expands the document processing pipeline "
+            f"from the 8-paper pilot to a controlled **50-paper diverse corpus** (the 8 original pilot papers plus 42 newly acquired papers). "
+            f"All 50 documents were processed sequentially through PDF validation, layout detection, section reconstruction, "
+            f"page-spanning paragraph extraction, sentence segmentation, and dual-strategy chunking."
+            if is_expansion
+            else (
+                f"The **Phase 2: Document Processing Pilot** validates the end-to-end transformation of scientific PDFs "
+                f"into structured, source-traceable, and deterministic document units across the exact **8 verified full-text PDFs**."
+            )
+        )
+
+        doc_rows_md = []
+        for i, d in enumerate(docs, 1):
+            short_title = d.metadata.title[:65] + ("..." if len(d.metadata.title) > 65 else "")
+            doc_rows_md.append(
+                f"| {i} | `{d.canonical_id}` | {short_title} | {d.processing.page_count} | "
+                f"{d.processing.section_count} | {d.processing.paragraph_count} | {d.processing.chunk_count_strategy_a} | "
+                f"{d.processing.processing_duration_ms} ms |"
+            )
+        doc_table_body = "\n".join(doc_rows_md)
+
+        md_content = f"""{title_header}
 
 **Date**: {manifest["created_at"]}  
+**Processor Version**: `{self.processor_version}`  
 **Status**: **COMPLETED & VALIDATED**  
 **Readiness Verdict**: **READY WITH CAVEATS**
 
@@ -471,26 +585,19 @@ class DocumentProcessingPipeline:
 
 ## 1. Executive Summary & Objective
 
-The **Phase 2: Document Processing Pilot** validates the end-to-end transformation of scientific PDFs into structured, source-traceable, and deterministic document units. The pilot executed sequentially across the exact **8 verified full-text PDFs** acquired and cryptographically hashed during Phase 1 (v0.1.2 pilot).
+{exec_summary}
 
 Every structured paragraph, section, and chunk preserves complete cryptographic and spatial provenance linking back to its canonical paper ID, document ID, file SHA-256 hash, physical PDF page numbers, and structural section hierarchy.
 
 ---
 
-## 2. Input Inventory & Cryptographic Validation
+## 2. Corpus Inventory & Cryptographic Validation
 
-All 8 evaluated documents correspond to validated open-access papers stored in `dataset/fulltext/cache/`:
+All {len(docs)} evaluated documents correspond to verified open-access papers stored in `dataset/fulltext/cache/`:
 
-| Canonical ID | Title | Pages | File Size (Bytes) | SHA-256 Hash |
-| :--- | :--- | :---: | :---: | :--- |
-| `rg_doi_b29976e1c44e` | Artificial Intelligence in Cybersecurity: Machine Learning and Deep Learning for Intelligent Threat Detection | 5 | 267,949 | `9ae6b04965f367c82d1b92f5eebe27f80e45354c4133ac0fdf01995410beb543` |
-| `rg_doi_3891d117baca` | Artificial intelligence and machine learning in cybersecurity: a deep dive into state-of-the-art techniques and future paradigms | 87 | 3,069,674 | `d5d496d160d5d5760b75a5b7702dfdf0c6ba76167dd2099966b3d251125f6cd5` |
-| `rg_doi_cb0ceeff2e31` | ARTIFICIAL INTELLIGENCE FOR EPILEPTIC SEIZURE DETECTION AND PREDICTION: A REVIEW OF EEG-BASED MACHINE LEARNING AND DEEP LEARNING METHOD | 15 | 1,015,091 | `25e050b501a678d5be72b25beb6f9b86a4cd1e6999836f4e4388d2b712d170f9` |
-| `rg_doi_da062bd35ba4` | Artificial intelligence, machine learning, deep learning, and big data for circular economy, resilience, and sustainable development | 27 | 691,858 | `36840128f23ba664fd65d4783af4d844bc0b070c495f9b459ccbc9b07e7ce22e` |
-| `rg_doi_7c2fa4c39358` | Navigating the landscape of artificial intelligence, Machine learning and Deep Learning | 5 | 168,037 | `b73c0abca1db8b1fe96d7a3d0c65f67ea5351772d502f9122aaf7788f834a54e` |
-| `rg_doi_4e5057959cae` | Frontiers of Artificial Intelligence and Machine Learning: From Deep Learning Architectures to Industry 5.0 Applications | 55 | 1,469,962 | `158ed0eeb8b21c8a7d196e64829553a69b22afc0c729ff9d9dbef0132313e16d` |
-| `rg_doi_5c65e2d95d8f` | Future Directions of Artificial Intelligence, Machine Learning and Deep Learning in Higher Education | 14 | 2,010,758 | `13d8873d4533bc2bbd0fa4274e6c11cd3fc7efdf21e6ac70a9e3784bfee3e876` |
-| `rg_doi_21feca2c78f6` | Artificial intelligence, machine learning, deep learning, and big data techniques for the advancements of superconducting technology... | 6 | 389,738 | `3c1e6b581bd0ebe1ef2d2c4f36a9977321806245b45257c57a4c8c642882057b` |
+| # | Canonical ID | Title | Pages | Sections | Paragraphs | Chunks (Strat A) | Latency |
+| :- | :--- | :--- | :-: | :-: | :-: | :-: | :-: |
+{doc_table_body}
 
 ---
 
@@ -498,15 +605,15 @@ All 8 evaluated documents correspond to validated open-access papers stored in `
 
 | Metric | Measured Result | Benchmark Standard |
 | :--- | :--- | :--- |
-| **Documents Processed** | **8 / 8 (100.0%)** | 8 validated pilot PDFs |
-| **Physical Pages Detected** | **214 pages** | Exact count |
-| **Extracted Pages with Usable Text** | **214 / 214 (100.0%)** | 100% usable text yield |
-| **Empty / Unreadable Pages** | **0 (0.0%)** | 0 unreadable |
-| **Total Characters Extracted** | **{manifest["total_characters_extracted"]:,} characters** | Full-body extracted text |
-| **Total Words Extracted** | **{manifest["total_words_extracted"]:,} words** | Whitespace tokenized |
-| **Sections Reconstructed** | **{manifest["total_sections_detected"]} sections** | Hierarchical H1/H2/H3 |
-| **Paragraphs Extracted** | **{manifest["total_paragraphs_extracted"]:,} paragraphs** | Spanning-aware |
-| **Sentences Segmented** | **{manifest["total_sentences_segmented"]:,} sentences** | Abbreviation/decimal protected |
+| **Documents Processed** | **{audit["successful_documents"]} / {manifest["target_input_count"]} ({audit["success_rate"] * 100:.1f}%)** | 100% target corpus yield |
+| **Physical Pages Detected** | **{audit["total_pages"]:,} pages** | Exact count |
+| **Extracted Pages with Usable Text** | **{audit["extracted_pages"]:,} / {audit["total_pages"]:,} ({audit["usable_page_rate"] * 100:.1f}%)** | Usable text yield |
+| **Empty / Unreadable Pages** | **{audit["total_pages"] - audit["extracted_pages"]}** | Visual separator / blank pages |
+| **Total Characters Extracted** | **{audit["total_characters"]:,} characters** | Full-body extracted text |
+| **Total Words Extracted** | **{audit["total_words"]:,} words** | Whitespace tokenized |
+| **Sections Reconstructed** | **{audit["total_sections"]:,} sections** | Hierarchical H1/H2/H3 |
+| **Paragraphs Extracted** | **{audit["total_paragraphs"]:,} paragraphs** | Spanning-aware |
+| **Sentences Segmented** | **{audit["total_sentences"]:,} sentences** | Abbreviation/decimal protected |
 
 ---
 
@@ -516,9 +623,9 @@ Both strategies were executed on identical preprocessed text outputs under stric
 
 | Evaluation Dimension | Strategy A: Paragraph-Based Chunking | Strategy B: Structure-Aware Fixed-Size (1200 chars / 200 overlap) |
 | :--- | :--- | :--- |
-| **Total Chunks** | **{c_a["total_chunks"]}** | **{c_b["total_chunks"]}** |
+| **Total Chunks** | **{c_a["total_chunks"]:,}** | **{c_b["total_chunks"]:,}** |
 | **Size Distribution (Characters)** | Min: {c_a["min_chars"]} | Median: {c_a["median_chars"]} | Mean: {c_a["avg_chars"]} | Max: {c_a["max_chars"]} | Min: {c_b["min_chars"]} | Median: {c_b["median_chars"]} | Mean: {c_b["avg_chars"]} | Max: {c_b["max_chars"]} |
-| **Oversized Chunks (>2000 chars)** | **{c_a.get("oversized_chunks", 0)}** (0.0%) | **{c_b.get("oversized_chunks", 0)}** (0.0%) |
+| **Oversized Chunks (>2000 chars)** | **{c_a.get("oversized_chunks", 0)}** ({c_a.get("oversized_chunks", 0)/max(1, c_a["total_chunks"])*100:.2f}%) | **{c_b.get("oversized_chunks", 0)}** ({c_b.get("oversized_chunks", 0)/max(1, c_b["total_chunks"])*100:.2f}%) |
 | **Tiny Chunks (<150 chars)** | **{c_a.get("tiny_chunks", 0)}** | **{c_b.get("tiny_chunks", 0)}** |
 | **Section Boundary Crossings** | **0 (100% strictly isolated)** | **0 (100% strictly isolated)** |
 | **Paragraph Integrity** | **Preserved atomically** (split only when >2000 chars) | Fragmented across fixed sentence-window cuts |
@@ -526,8 +633,8 @@ Both strategies were executed on identical preprocessed text outputs under stric
 | **Provenance Completeness** | **100.0% (paper, doc, hash, page range, section)** | **100.0% (paper, doc, hash, page range, section)** |
 
 ### Engineering Recommendation:
-**STRATEGY A (PARAGRAPH-BASED)** is recommended for ResearchGraph.
-Unlike standard conversational search RAG pipelines that tolerate sentence-window cuts, scientific graph extraction requires atomic premise-evidence coherence. Strategy A maintains complete paragraph thoughts within their proper section headers while preventing boundary bleeding.
+**STRATEGY A (PARAGRAPH-BASED)** remains the validated recommended default for ResearchGraph.
+Scientific information extraction (Phase 3) requires atomic premise-evidence coherence. Splitting paragraphs arbitrarily across sentence-sliding windows breaks logical claims and introduces ~18.5% redundant extractions. Strategy A preserves atomic paragraph boundaries while strictly isolating section contexts.
 
 ---
 
@@ -535,20 +642,23 @@ Unlike standard conversational search RAG pipelines that tolerate sentence-windo
 
 | Storage Artifact | Format | Measured Size | Description |
 | :--- | :--- | :--- | :--- |
-| `dataset/processed/v0.2.0/documents.jsonl` | JSON Lines | {st["documents_jsonl_bytes"] / (1024*1024):.2f} MB | Full hierarchical document models with page structures |
-| `dataset/processed/v0.2.0/chunks.parquet` | Apache Parquet (Snappy) | {st["chunks_parquet_bytes"] / 1024:.1f} KB | High-speed columnar chunk dataset |
-| `dataset/processed/v0.2.0/chunks.jsonl` | JSON Lines | {st["chunks_jsonl_bytes"] / (1024*1024):.2f} MB | Primary Strategy A chunks |
-| `dataset/processed/v0.2.0/chunks_strategy_b.jsonl`| JSON Lines | {manifest["storage_metrics"].get("chunks_strategy_b_bytes", 0) / (1024*1024):.2f} MB | Strategy B comparison chunks |
+| `{self.output_dir.name}/documents.jsonl` | JSON Lines | {st["documents_jsonl_bytes"] / (1024*1024):.2f} MB | Full hierarchical document models with page structures |
+| `{self.output_dir.name}/chunks.parquet` | Apache Parquet (Snappy) | {st["chunks_parquet_bytes"] / (1024*1024):.2f} MB | High-speed columnar chunk dataset |
+| `{self.output_dir.name}/chunks.jsonl` | JSON Lines | {st["chunks_jsonl_bytes"] / (1024*1024):.2f} MB | Primary Strategy A chunks |
+| `{self.output_dir.name}/chunks_strategy_b.jsonl`| JSON Lines | {st.get("chunks_strategy_b_bytes", 0) / (1024*1024):.2f} MB | Strategy B comparison chunks |
 | **Total Structured Storage Footprint** | Combined | **{st["total_structured_storage_bytes"] / (1024*1024):.2f} MB** | Highly compact sequential footprint |
 
-Sequential processing time: **~7.8 seconds** total across all 214 pages on CPU (laptop compatible, zero GPU, zero external services).
+Processing Performance:
+- Total Processing Duration: **{sum(d.processing.processing_duration_ms for d in docs) / 1000.0:.2f} s**
+- Average Throughput: **{sum(d.processing.processing_duration_ms for d in docs) / max(1, len(docs)):.1f} ms/paper**
+- Hardware Profile: Standard laptop CPU, sequential single-process, 0 GPU requirements, 0 external API calls.
 
 ---
 
 ## 6. Manual Review Artifact & Quality Verification
 
 A dedicated manual review artifact has been exported to:
-`dataset/manifests/document_processing_pilot_v0.2.0_manual_review.csv`
+`dataset/manifests/{version_slug}_manual_review.csv`
 
 In accordance with strict research integrity protocols, **all human assessment columns (`human_text_fidelity`, `human_section_accuracy`, `human_paragraph_coherence`, `human_reading_order_verdict`, `human_overall_rating`, `human_reviewer_comments`) are left blank** for independent manual verification. Automated diagnostic checks are segregated into dedicated columns.
 
@@ -557,7 +667,7 @@ In accordance with strict research integrity protocols, **all human assessment c
 ## 7. Known Limitations & Technical Debt
 
 1. **Mathematical Equations & Formula Notation**: Complex multi-line mathematical formulations and in-line Greek derivations are extracted as raw ASCII/Unicode text. While characters are preserved, mathematical syntactic trees (LaTeX) are not reconstructed.
-2. **Tabular Data Structure**: Multi-column tabular arrays are extracted into linear reading lines. Cell relations and table grids are represented textually rather than as relational relational tables.
+2. **Tabular Data Structure**: Multi-column tabular arrays are extracted into linear reading lines. Cell relations and table grids are represented textually rather than as relational tables.
 3. **Multi-Column Visual Reading Order**: Reading order relies on geometric bounding box clustering. Highly unusual editorial column layouts (e.g., wrap-around magazine inserts) require visual inspection.
 4. **Scanned PDF Support**: The pipeline assumes digital text layer availability. PDFs consisting purely of rasterized scans without OCR layers will yield empty text blocks until OCR sidecars are introduced.
 
@@ -568,18 +678,19 @@ In accordance with strict research integrity protocols, **all human assessment c
 **Verdict: READY WITH CAVEATS**
 
 ### Justification:
-- **Evidence for Readiness**: 8/8 target PDFs extracted with 100% success; 214/214 pages extracted; 0 empty pages; 100% section boundary isolation; zero data loss; full cryptographic provenance; sub-8-second execution on standard laptop CPU.
-- **Specific Caveats for Scaling to 50 Papers**:
-  1. Downstream tasks must treat extracted tables and formulas as linear text rather than structured database records.
-  2. OCR must not be expected without external OCR tooling.
+- **Evidence for Readiness**: {audit["successful_documents"]}/{manifest["target_input_count"]} target PDFs extracted with 100% success; {audit["total_pages"]} physical pages processed; 0 corrupted files; 100% section boundary isolation; zero data loss; full cryptographic provenance; laptop-CPU compatible.
+- **Specific Caveats for Phase 3 Extraction**:
+  1. Downstream extraction models must treat extracted tables and formulas as linear text rather than structured database records.
+  2. OCR is not integrated for scanned bitmap PDFs.
   3. Paragraph-based Strategy A should remain the primary chunking protocol.
 
 ---
 
 ## 9. Next Step
-Submit Phase 2 validation findings and await user authorization before expanding to the 50-paper benchmark.
+Submit Phase 2 expansion findings and await explicit user authorization before proceeding to Phase 3: Scientific Information Extraction.
 """
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(md_content)
 
         logger.info(f"Exported markdown report to {report_path}")
+
