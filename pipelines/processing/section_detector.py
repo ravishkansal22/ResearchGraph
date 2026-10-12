@@ -79,34 +79,38 @@ class SectionDetector:
         headers: List[DetectedHeader] = []
 
         # Step 1: Scan all blocks across all pages to find section headers
+        found_strong_h1 = False
         for p in pages:
             for b_idx, b in enumerate(p.blocks):
                 if b.is_header_or_footer:
                     continue
 
-                header_info = self._check_if_block_is_header(b, p.page_number, b_idx)
+                is_p1_shield = (p.page_number == 1 and not found_strong_h1)
+                header_info = self._check_if_block_is_header(b, p.page_number, b_idx, is_p1_shield)
                 if header_info:
                     headers.append(header_info)
+                    if header_info.level == 1:
+                        found_strong_h1 = True
 
         # If no explicit headers were detected, create a single fallback section
         if not headers:
             all_text = "\n\n".join(p.cleaned_text for p in pages if not p.is_blank).strip()
             total_words = len(all_text.split())
-            return [
-                ProcessedSection(
-                    section_id=f"sec_{canonical_id}_01",
-                    section_title="Document Body",
-                    section_level=1,
-                    section_number=None,
-                    section_order=1,
-                    parent_section_id=None,
-                    start_page=1,
-                    end_page=len(pages),
-                    text=all_text,
-                    char_count=len(all_text),
-                    word_count=total_words,
-                )
-            ]
+            sec_fallback = ProcessedSection(
+                section_id=f"sec_{canonical_id}_01",
+                section_title="Document Body",
+                section_level=1,
+                section_number=None,
+                section_order=1,
+                parent_section_id=None,
+                start_page=1,
+                end_page=len(pages),
+                text=all_text,
+                char_count=len(all_text),
+                word_count=total_words,
+            )
+            sec_fallback._block_entries = [(p.page_number, p.cleaned_text) for p in pages if not p.is_blank]
+            return [sec_fallback]
 
         # Step 2: Build section hierarchy and assign text content
         sections: List[ProcessedSection] = []
@@ -117,6 +121,7 @@ class SectionDetector:
         # create a "Front Matter / Document Header" section
         first_hdr = headers[0]
         pre_text_parts: List[str] = []
+        pre_block_entries: List[Tuple[int, str]] = []
         pre_end_page = first_hdr.page_number
 
         for p in pages:
@@ -128,26 +133,27 @@ class SectionDetector:
                 if p.page_number == first_hdr.page_number and b_idx >= first_hdr.block_index:
                     break
                 pre_text_parts.append(b.text)
+                pre_block_entries.append((p.page_number, b.text))
 
         pre_text = "\n\n".join(pre_text_parts).strip()
         sec_order = 1
         if pre_text:
             pre_sec_id = f"sec_{canonical_id}_{sec_order:02d}"
-            sections.append(
-                ProcessedSection(
-                    section_id=pre_sec_id,
-                    section_title="Front Matter / Document Header",
-                    section_level=1,
-                    section_number=None,
-                    section_order=sec_order,
-                    parent_section_id=None,
-                    start_page=1,
-                    end_page=pre_end_page,
-                    text=pre_text,
-                    char_count=len(pre_text),
-                    word_count=len(pre_text.split()),
-                )
+            pre_sec = ProcessedSection(
+                section_id=pre_sec_id,
+                section_title="Front Matter / Document Header",
+                section_level=1,
+                section_number=None,
+                section_order=sec_order,
+                parent_section_id=None,
+                start_page=1,
+                end_page=pre_end_page,
+                text=pre_text,
+                char_count=len(pre_text),
+                word_count=len(pre_text.split()),
             )
+            pre_sec._block_entries = pre_block_entries
+            sections.append(pre_sec)
             sec_order += 1
 
         # Now assemble each detected section's content up to the next section
@@ -169,6 +175,7 @@ class SectionDetector:
 
             # Collect body text for this section
             sec_text_parts: List[str] = []
+            sec_block_entries: List[Tuple[int, str]] = []
             start_p = hdr.page_number
             end_p = start_p
 
@@ -190,34 +197,37 @@ class SectionDetector:
                         lines = b.text.split("\n")
                         remaining_lines = lines[1:] if len(lines) > 1 else []
                         if remaining_lines:
-                            sec_text_parts.append("\n".join(remaining_lines).strip())
+                            rem_txt = "\n".join(remaining_lines).strip()
+                            sec_text_parts.append(rem_txt)
+                            sec_block_entries.append((p.page_number, rem_txt))
                         continue
                     # Stop if we hit the next header
                     if next_hdr and p.page_number == next_hdr.page_number and b_idx >= next_hdr.block_index:
                         break
 
                     sec_text_parts.append(b.text)
+                    sec_block_entries.append((p.page_number, b.text))
                     end_p = max(end_p, p.page_number)
 
             sec_full_text = "\n\n".join(part for part in sec_text_parts if part).strip()
             total_chars = len(sec_full_text)
             total_words = len(sec_full_text.split())
 
-            sections.append(
-                ProcessedSection(
-                    section_id=sec_id,
-                    section_title=hdr.title,
-                    section_level=hdr.level,
-                    section_number=hdr.number,
-                    section_order=sec_order,
-                    parent_section_id=parent_id,
-                    start_page=start_p,
-                    end_page=max(start_p, end_p),
-                    text=sec_full_text,
-                    char_count=total_chars,
-                    word_count=total_words,
-                )
+            sec_obj = ProcessedSection(
+                section_id=sec_id,
+                section_title=hdr.title,
+                section_level=hdr.level,
+                section_number=hdr.number,
+                section_order=sec_order,
+                parent_section_id=parent_id,
+                start_page=start_p,
+                end_page=max(start_p, end_p),
+                text=sec_full_text,
+                char_count=total_chars,
+                word_count=total_words,
             )
+            sec_obj._block_entries = sec_block_entries
+            sections.append(sec_obj)
             sec_order += 1
 
         return sections
@@ -227,6 +237,7 @@ class SectionDetector:
         b: TextBlock,
         page_num: int,
         block_idx: int,
+        is_page1_pre_abstract: bool = False,
     ) -> Optional[DetectedHeader]:
         """Examine block typography and text patterns to detect section headers."""
         text = b.text.strip()
@@ -240,6 +251,26 @@ class SectionDetector:
         first_line = lines[0]
         # Ignore long lines (>120 chars) as header candidates unless explicit chapter
         if len(first_line) > 120 and not first_line.lower().startswith("chapter"):
+            return None
+
+        # Filter out standalone page numbers, publisher logos (e.g. Springer 123)
+        if re.match(r"^(123|\d+|[ivxlcdm]+)$", first_line, re.IGNORECASE):
+            return None
+
+        # Filter out table/figure captions
+        if any(first_line.lower().startswith(pfx) for pfx in ["table", "fig", "figure", "tab.", "scheme", "chart", "box"]):
+            return None
+
+        # Filter out URLs and DOIs
+        if any(first_line.lower().startswith(pfx) for pfx in ["http", "doi:", "https:"]):
+            return None
+
+        # Filter out author, affiliation, and email cues
+        if any(w in first_line.lower() for w in ["university", "department", "college", "email:", "@", "[at]", "author", "correspondence", "dr.", "prof.", "ph.d."]):
+            return None
+
+        # Filter out journal / volume / metadata badges
+        if any(w in first_line.lower() for w in ["paper id:", "issn", "isbn", "volume", "issue", "journal of", "proceedings of", "conference on", "open access", "research article", "review article", "original article", "editorial"]):
             return None
 
         # 1. Chapter headers (e.g. 'Chapter 1 ...')
@@ -279,9 +310,6 @@ class SectionDetector:
         if m_dec2:
             num = m_dec2.group(1)
             title = first_line.strip()
-            # Filter out table/figure decimals like 'Table 1.1' or 'Figure 2.1'
-            if any(first_line.lower().startswith(pfx) for pfx in ["table", "fig", "figure", "tab."]):
-                return None
             return DetectedHeader(
                 title=title,
                 number=num,
@@ -296,37 +324,40 @@ class SectionDetector:
         # 4. Main Section: 1-level decimal numbering (e.g. '1. Introduction' or '1 Introduction')
         m_dec1 = RE_DECIMAL_1.match(first_line)
         if m_dec1:
-            num = m_dec1.group(1)
-            title = first_line.strip()
-            if any(first_line.lower().startswith(pfx) for pfx in ["table", "fig", "figure", "tab."]):
-                return None
-            return DetectedHeader(
-                title=title,
-                number=num,
-                level=1,
-                page_number=page_num,
-                block_index=block_idx,
-                font_size=b.max_font_size,
-                is_bold=b.is_bold_dominant,
-                full_block_text=text,
-            )
+            # Reject numbered definition lists (e.g. '1. Term: Definition sentence...')
+            if not re.match(r"^\s*\d+\.\s+[A-Za-z\s\(\)]+:\s+[A-Z]", first_line):
+                if len(first_line) <= 85 and not first_line.endswith((".", ",", ";")):
+                    num = m_dec1.group(1)
+                    title = first_line.strip()
+                    return DetectedHeader(
+                        title=title,
+                        number=num,
+                        level=1,
+                        page_number=page_num,
+                        block_index=block_idx,
+                        font_size=b.max_font_size,
+                        is_bold=b.is_bold_dominant,
+                        full_block_text=text,
+                    )
 
         # 5. Number space pattern (e.g. '1 Introduction' or '3 Methodology')
         m_num_sp = RE_NUM_SPACE_1.match(first_line)
         if m_num_sp and (b.is_bold_dominant or b.max_font_size > self.body_font_size_threshold or len(lines) == 1):
-            num = m_num_sp.group(1)
-            title = first_line.strip()
-            if int(num) <= 20 and not any(first_line.lower().startswith(pfx) for pfx in ["table", "fig", "figure"]):
-                return DetectedHeader(
-                    title=title,
-                    number=num,
-                    level=1,
-                    page_number=page_num,
-                    block_index=block_idx,
-                    font_size=b.max_font_size,
-                    is_bold=b.is_bold_dominant,
-                    full_block_text=text,
-                )
+            if not re.match(r"^\s*\d+\s+[A-Za-z\s\(\)]+:\s+[A-Z]", first_line):
+                if len(first_line) <= 85 and not first_line.endswith((".", ",", ";")):
+                    num = m_num_sp.group(1)
+                    title = first_line.strip()
+                    if int(num) <= 30:
+                        return DetectedHeader(
+                            title=title,
+                            number=num,
+                            level=1,
+                            page_number=page_num,
+                            block_index=block_idx,
+                            font_size=b.max_font_size,
+                            is_bold=b.is_bold_dominant,
+                            full_block_text=text,
+                        )
 
         # 6. Roman numeral numbering (e.g. 'I. INTRODUCTION', 'II. RELATED WORK')
         m_rom = RE_ROMAN_NUM.match(first_line)
@@ -360,22 +391,32 @@ class SectionDetector:
                 )
 
         # 8. Prominent bold standalone heading (typographical cue)
-        if (
-            len(lines) == 1
-            and len(first_line) < 70
-            and (b.is_bold_dominant or b.max_font_size >= 12.5)
-            and not first_line.endswith((".", ",", ";"))
-            and not first_line.lower().startswith(("table", "fig", "figure", "http", "doi"))
-        ):
-            return DetectedHeader(
-                title=first_line.strip(),
-                number=None,
-                level=2 if b.max_font_size < 13.0 else 1,
-                page_number=page_num,
-                block_index=block_idx,
-                font_size=b.max_font_size,
-                is_bold=b.is_bold_dominant,
-                full_block_text=text,
-            )
+        # Suppressed on Page 1 before Abstract/Intro to prevent author/title fragments becoming sections
+        if not is_page1_pre_abstract:
+            # Disallow single-word lines that are not recognized sections
+            words = first_line.split()
+            if len(words) == 1 and first_line.lower() not in {
+                "abstract", "introduction", "background", "methodology", "methods",
+                "experiments", "results", "discussion", "conclusion", "conclusions",
+                "limitations", "references", "bibliography", "acknowledgments", "overview",
+            }:
+                return None
+
+            if (
+                len(lines) == 1
+                and len(first_line) < 70
+                and (b.is_bold_dominant or b.max_font_size >= 12.5)
+                and not first_line.endswith((".", ",", ";"))
+            ):
+                return DetectedHeader(
+                    title=first_line.strip(),
+                    number=None,
+                    level=2 if b.max_font_size < 13.0 else 1,
+                    page_number=page_num,
+                    block_index=block_idx,
+                    font_size=b.max_font_size,
+                    is_bold=b.is_bold_dominant,
+                    full_block_text=text,
+                )
 
         return None

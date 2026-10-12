@@ -70,20 +70,36 @@ class ProcessingQualityAuditor:
                 return {
                     "count": 0,
                     "avg_chars": 0.0,
-                    "avg_words": 0.0,
+                    "median_chars": 0,
                     "min_chars": 0,
                     "max_chars": 0,
-                    "section_boundary_preservation": 1.0,
+                    "avg_words": 0.0,
+                    "median_words": 0,
+                    "min_words": 0,
+                    "max_words": 0,
+                    "oversized_chunks": 0,
+                    "tiny_chunks": 0,
+                    "section_boundary_preservation": "100%",
                 }
-            char_lens = [c.char_count for c in chunks]
-            word_lens = [c.word_count for c in chunks]
+            char_lens = sorted([c.char_count for c in chunks])
+            word_lens = sorted([c.word_count for c in chunks])
+            n = len(chunks)
+            med_char = char_lens[n // 2] if n % 2 != 0 else (char_lens[n // 2 - 1] + char_lens[n // 2]) // 2
+            med_word = word_lens[n // 2] if n % 2 != 0 else (word_lens[n // 2 - 1] + word_lens[n // 2]) // 2
+
             return {
-                "count": len(chunks),
-                "avg_chars": round(sum(char_lens) / len(chunks), 1),
-                "avg_words": round(sum(word_lens) / len(chunks), 1),
+                "count": n,
+                "avg_chars": round(sum(char_lens) / n, 1),
+                "median_chars": med_char,
                 "min_chars": min(char_lens),
                 "max_chars": max(char_lens),
-                "section_boundary_preservation": 1.0,  # by construction strictly 100%
+                "avg_words": round(sum(word_lens) / n, 1),
+                "median_words": med_word,
+                "min_words": min(word_lens),
+                "max_words": max(word_lens),
+                "oversized_chunks": sum(1 for c in char_lens if c > 2000),
+                "tiny_chunks": sum(1 for c in char_lens if c < 150),
+                "section_boundary_preservation": "100%",
             }
 
         stats_a = chunk_stats(chunks_a)
@@ -143,8 +159,14 @@ class ProcessingQualityAuditor:
         chunks_b_total = sum(a["strategy_b_metrics"]["count"] for a in doc_audits)
 
         # Aggregate chunk sizes
-        all_a_chars = [c.char_count for d in docs for c in d.chunks_strategy_a]
-        all_b_chars = [c.char_count for d in docs for c in d.chunks_strategy_b]
+        all_a_chars = sorted([c.char_count for d in docs for c in d.chunks_strategy_a])
+        all_b_chars = sorted([c.char_count for d in docs for c in d.chunks_strategy_b])
+
+        na = len(all_a_chars)
+        med_a = all_a_chars[na // 2] if na % 2 != 0 else (all_a_chars[na // 2 - 1] + all_a_chars[na // 2]) // 2 if na else 0
+
+        nb = len(all_b_chars)
+        med_b = all_b_chars[nb // 2] if nb % 2 != 0 else (all_b_chars[nb // 2 - 1] + all_b_chars[nb // 2]) // 2 if nb else 0
 
         return {
             "total_documents_processed": total_docs,
@@ -163,15 +185,21 @@ class ProcessingQualityAuditor:
                 "strategy_a_paragraph_based": {
                     "total_chunks": chunks_a_total,
                     "avg_chars": round(sum(all_a_chars) / max(1, len(all_a_chars)), 1),
+                    "median_chars": med_a,
                     "min_chars": min(all_a_chars, default=0),
                     "max_chars": max(all_a_chars, default=0),
+                    "oversized_chunks": sum(1 for c in all_a_chars if c > 2000),
+                    "tiny_chunks": sum(1 for c in all_a_chars if c < 150),
                     "section_boundary_preservation": "100%",
                 },
                 "strategy_b_structure_aware_fixed": {
                     "total_chunks": chunks_b_total,
                     "avg_chars": round(sum(all_b_chars) / max(1, len(all_b_chars)), 1),
+                    "median_chars": med_b,
                     "min_chars": min(all_b_chars, default=0),
                     "max_chars": max(all_b_chars, default=0),
+                    "oversized_chunks": sum(1 for c in all_b_chars if c > 2000),
+                    "tiny_chunks": sum(1 for c in all_b_chars if c < 150),
                     "section_boundary_preservation": "100%",
                 },
             },

@@ -57,6 +57,10 @@ class ProcessedParagraph(BaseModel):
     char_count: int = Field(default=0, description="Character count")
     word_count: int = Field(default=0, description="Word count")
     sentence_count: int = Field(default=0, description="Number of segmented sentences")
+    document_id: Optional[str] = Field(default=None, description="Document processing identifier")
+    file_hash: Optional[str] = Field(default=None, description="SHA-256 hash of input PDF")
+    page_end: Optional[int] = Field(default=None, description="1-indexed page where paragraph ends (if spanning)")
+    processing_version: str = Field(default="v0.2.0", description="Processor pipeline version")
     sentences: List[ProcessedSentence] = Field(default_factory=list, description="Child sentences if segmented")
 
 
@@ -93,6 +97,8 @@ class ProcessedChunk(BaseModel):
     """Traceable, structure-aware document chunk for downstream retrieval/analysis."""
     chunk_id: str = Field(..., description="Unique chunk ID (e.g. chk_rg_xxx_A_001)")
     canonical_id: str = Field(..., description="Canonical paper identifier")
+    document_id: Optional[str] = Field(default=None, description="Document processing identifier")
+    file_hash: Optional[str] = Field(default=None, description="SHA-256 hash of input PDF")
     section_id: str = Field(..., description="Containing section identifier")
     section_title: str = Field(..., description="Containing section heading")
     section_level: int = Field(default=1, description="Section hierarchy level")

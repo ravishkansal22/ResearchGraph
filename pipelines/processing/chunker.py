@@ -18,6 +18,7 @@ from dataset.schemas.document_processing import (
     ProcessedParagraph,
     ProcessedSection,
 )
+from pipelines.processing.sentence_segmenter import ScientificSentenceSegmenter
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ class DocumentChunker:
         self.max_char_size = max_char_size
         self.min_char_size = min_char_size
         self.overlap_char_size = overlap_char_size
+        self.segmenter = ScientificSentenceSegmenter()
 
     def chunk_strategy_a_paragraph_based(
         self,
@@ -63,7 +65,7 @@ class DocumentChunker:
             for p in sec_pars:
                 p_len = len(p.text)
 
-                # If single paragraph is oversized (> max_char_size), flush current and create dedicated chunk(s)
+                # If single paragraph is oversized (> max_char_size), split at sentence boundaries
                 if p_len > self.max_char_size:
                     if current_group:
                         chunks.append(
@@ -79,17 +81,62 @@ class DocumentChunker:
                         current_group = []
                         current_len = 0
 
-                    # Create chunk for this oversized paragraph
-                    chunks.append(
-                        self._create_chunk_from_paragraphs(
-                            [p],
-                            sec,
-                            metadata,
-                            ChunkStrategy.STRATEGY_A_PARAGRAPH,
-                            chunk_order,
+                    sentences_to_split = p.sentences if (p.sentences and len(p.sentences) > 1) else self.segmenter.segment_text(p.text, p.paragraph_id)
+                    if sentences_to_split and len(sentences_to_split) > 1:
+                        sent_group: List[str] = []
+                        sent_group_len = 0
+                        split_idx = 1
+                        for s in sentences_to_split:
+                            s_len = len(s.text)
+                            if (sent_group_len + s_len > self.target_char_size) and sent_group:
+                                chunks.append(
+                                    self._create_chunk_from_text(
+                                        " ".join(sent_group),
+                                        [p],
+                                        sec,
+                                        metadata,
+                                        ChunkStrategy.STRATEGY_A_PARAGRAPH,
+                                        chunk_order,
+                                        extra_provenance={
+                                            "parent_paragraph_id": p.paragraph_id,
+                                            "split_index": split_idx,
+                                        },
+                                    )
+                                )
+                                chunk_order += 1
+                                split_idx += 1
+                                sent_group = [s.text]
+                                sent_group_len = s_len
+                            else:
+                                sent_group.append(s.text)
+                                sent_group_len += s_len + 1
+                        if sent_group:
+                            chunks.append(
+                                self._create_chunk_from_text(
+                                    " ".join(sent_group),
+                                    [p],
+                                    sec,
+                                    metadata,
+                                    ChunkStrategy.STRATEGY_A_PARAGRAPH,
+                                    chunk_order,
+                                    extra_provenance={
+                                        "parent_paragraph_id": p.paragraph_id,
+                                        "split_index": split_idx,
+                                    },
+                                )
+                            )
+                            chunk_order += 1
+                    else:
+                        chunks.append(
+                            self._create_chunk_from_paragraphs(
+                                [p],
+                                sec,
+                                metadata,
+                                ChunkStrategy.STRATEGY_A_PARAGRAPH,
+                                chunk_order,
+                            )
                         )
-                    )
-                    chunk_order += 1
+                        chunk_order += 1
                     continue
 
                 # If adding this paragraph exceeds target size and current group is non-empty, flush
@@ -108,7 +155,7 @@ class DocumentChunker:
                     current_len = p_len
                 else:
                     current_group.append(p)
-                    current_len += p_len + 2  # account for join space
+                    current_len += p_len + 2
 
             # Flush remaining group for this section
             if current_group:
@@ -188,7 +235,7 @@ class DocumentChunker:
                 p_start = window_pars[0].paragraph_order if window_pars else 1
                 p_end = window_pars[-1].paragraph_order if window_pars else p_start
                 pg_start = min((p.page_number for p in window_pars), default=sec.start_page)
-                pg_end = max((p.page_number for p in window_pars), default=sec.end_page)
+                pg_end = max((p.page_end or p.page_number for p in window_pars), default=sec.end_page)
                 p_ids = [p.paragraph_id for p in window_pars]
 
                 words = len(chunk_text.split())
@@ -197,6 +244,8 @@ class DocumentChunker:
                 chk = ProcessedChunk(
                     chunk_id=f"chk_{metadata.canonical_id}_B_{chunk_order:04d}",
                     canonical_id=metadata.canonical_id,
+                    document_id=f"doc_{metadata.canonical_id}",
+                    file_hash=metadata.file_hash,
                     section_id=sec.section_id,
                     section_title=sec.section_title,
                     section_level=sec.section_level,
@@ -212,6 +261,7 @@ class DocumentChunker:
                     strategy=ChunkStrategy.STRATEGY_B_STRUCTURE_FIXED,
                     provenance={
                         "canonical_id": metadata.canonical_id,
+                        "document_id": f"doc_{metadata.canonical_id}",
                         "title": metadata.title,
                         "doi": metadata.doi,
                         "source": metadata.source,
@@ -255,20 +305,59 @@ class DocumentChunker:
         order: int,
     ) -> ProcessedChunk:
         """Helper to create a ProcessedChunk from a list of paragraphs."""
-        strat_code = "A" if strategy == ChunkStrategy.STRATEGY_A_PARAGRAPH else "B"
         chunk_text = "\n\n".join(p.text for p in pars).strip()
+        return self._create_chunk_from_text(
+            chunk_text=chunk_text,
+            pars=pars,
+            sec=sec,
+            metadata=metadata,
+            strategy=strategy,
+            order=order,
+        )
+
+    def _create_chunk_from_text(
+        self,
+        chunk_text: str,
+        pars: List[ProcessedParagraph],
+        sec: ProcessedSection,
+        metadata: DocumentMetadata,
+        strategy: ChunkStrategy,
+        order: int,
+        extra_provenance: Optional[Dict[str, Any]] = None,
+    ) -> ProcessedChunk:
+        """Helper to create a ProcessedChunk from text referencing parent paragraphs."""
+        strat_code = "A" if strategy == ChunkStrategy.STRATEGY_A_PARAGRAPH else "B"
         words = len(chunk_text.split())
         tokens_est = int(words * 1.3)
 
         p_start = pars[0].paragraph_order if pars else 1
         p_end = pars[-1].paragraph_order if pars else p_start
         pg_start = min((p.page_number for p in pars), default=sec.start_page)
-        pg_end = max((p.page_number for p in pars), default=sec.end_page)
+        pg_end = max((p.page_end or p.page_number for p in pars), default=sec.end_page)
         p_ids = [p.paragraph_id for p in pars]
+
+        prov = {
+            "canonical_id": metadata.canonical_id,
+            "document_id": f"doc_{metadata.canonical_id}",
+            "title": metadata.title,
+            "doi": metadata.doi,
+            "source": metadata.source,
+            "section_id": sec.section_id,
+            "section_title": sec.section_title,
+            "section_level": sec.section_level,
+            "page_start": pg_start,
+            "page_end": pg_end,
+            "paragraph_ids": p_ids,
+            "file_hash": metadata.file_hash,
+        }
+        if extra_provenance:
+            prov.update(extra_provenance)
 
         return ProcessedChunk(
             chunk_id=f"chk_{metadata.canonical_id}_{strat_code}_{order:04d}",
             canonical_id=metadata.canonical_id,
+            document_id=f"doc_{metadata.canonical_id}",
+            file_hash=metadata.file_hash,
             section_id=sec.section_id,
             section_title=sec.section_title,
             section_level=sec.section_level,
@@ -282,17 +371,5 @@ class DocumentChunker:
             word_count=words,
             token_count_est=tokens_est,
             strategy=strategy,
-            provenance={
-                "canonical_id": metadata.canonical_id,
-                "title": metadata.title,
-                "doi": metadata.doi,
-                "source": metadata.source,
-                "section_id": sec.section_id,
-                "section_title": sec.section_title,
-                "section_level": sec.section_level,
-                "page_start": pg_start,
-                "page_end": pg_end,
-                "paragraph_ids": p_ids,
-                "file_hash": metadata.file_hash,
-            },
+            provenance=prov,
         )

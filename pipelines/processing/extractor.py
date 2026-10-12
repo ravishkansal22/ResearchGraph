@@ -68,6 +68,8 @@ class PageExtractionResult:
     char_count: int
     word_count: int
     is_blank: bool
+    page_width: float = 612.0
+    page_height: float = 792.0
     headers_footers: List[str] = field(default_factory=list)
 
 
@@ -192,18 +194,26 @@ class PDFExtractor:
                 bold_spans = sum(1 for s in all_spans if s.is_bold)
                 is_bold_dom = (bold_spans / max(1, len(all_spans))) > 0.5
 
-                tb = TextBlock(
-                    block_id=block_idx,
-                    text=full_b_text,
-                    bbox=bbox,
-                    lines=text_lines,
-                    page_number=p_num,
-                    max_font_size=max_sz,
-                    avg_font_size=avg_sz,
-                    is_bold_dominant=is_bold_dom,
-                )
-                extracted_blocks.append(tb)
-                block_idx += 1
+                # Check if block contains embedded section headings needing sub-block decomposition
+                sub_blocks = self._split_lines_into_blocks(text_lines, bbox, p_num)
+                if sub_blocks:
+                    for sb in sub_blocks:
+                        sb.block_id = block_idx
+                        extracted_blocks.append(sb)
+                        block_idx += 1
+                else:
+                    tb = TextBlock(
+                        block_id=block_idx,
+                        text=full_b_text,
+                        bbox=bbox,
+                        lines=text_lines,
+                        page_number=p_num,
+                        max_font_size=max_sz,
+                        avg_font_size=avg_sz,
+                        is_bold_dominant=is_bold_dom,
+                    )
+                    extracted_blocks.append(tb)
+                    block_idx += 1
 
             # Detect layout topology & sort reading order
             layout_type, ordered_blocks = self._order_blocks_for_reading(
@@ -225,6 +235,8 @@ class PDFExtractor:
                     char_count=char_count,
                     word_count=word_count,
                     is_blank=is_blank,
+                    page_width=page_width,
+                    page_height=page_height,
                 )
             )
 
@@ -265,10 +277,112 @@ class PDFExtractor:
                     char_count=char_count,
                     word_count=word_count,
                     is_blank=is_blank,
+                    page_width=612.0,
+                    page_height=792.0,
                 )
             )
 
         return pages, {"page_count": len(pages)}
+
+    def _split_lines_into_blocks(
+        self,
+        lines: List[TextLine],
+        default_bbox: Tuple[float, float, float, float],
+        p_num: int,
+    ) -> List[TextBlock]:
+        """Split a raw block containing embedded section headings into separate TextBlocks."""
+        if not lines or len(lines) <= 1:
+            return []
+
+        re_heading = re.compile(
+            r"^\s*("
+            r"(\d+(\.\d+)*)\.?\s+[A-Z][a-zA-Z\s,\-\:]{2,70}"
+            r"|Abstract:?"
+            r"|Keywords:?"
+            r"|References:?"
+            r"|Bibliography:?"
+            r"|[IVXLCDM]+\.\s+[A-Z\s]{2,50}"
+            r"|Chapter\s+\d+[:\.]?\s+.*"
+            r")\s*$",
+            re.IGNORECASE,
+        )
+
+        groups: List[List[TextLine]] = []
+        current: List[TextLine] = []
+
+        for l_idx, line in enumerate(lines):
+            l_txt = line.text.strip()
+            # If line starts with "Abstract:" and has body text immediately following
+            if re.match(r"^Abstract:\s+[A-Z]", l_txt, re.IGNORECASE):
+                hdr_line = TextLine(
+                    text="Abstract",
+                    spans=line.spans,
+                    bbox=line.bbox,
+                    avg_font_size=line.avg_font_size,
+                    is_bold=True,
+                )
+                rem_txt = l_txt[len("Abstract:"):].strip()
+                rem_line = TextLine(
+                    text=rem_txt,
+                    spans=line.spans,
+                    bbox=line.bbox,
+                    avg_font_size=line.avg_font_size,
+                    is_bold=line.is_bold,
+                )
+                if current:
+                    groups.append(current)
+                groups.append([hdr_line])
+                current = [rem_line]
+                continue
+
+            # Check for embedded heading starting at l_idx > 0
+            is_hdr = False
+            if l_idx > 0 and re_heading.match(l_txt):
+                if not re.match(r"^\s*\d+\.\s+[A-Za-z\s\(\)]+:\s+[A-Z]", l_txt):
+                    is_hdr = True
+
+            if is_hdr and current:
+                groups.append(current)
+                current = [line]
+            else:
+                current.append(line)
+
+        if current:
+            groups.append(current)
+
+        if len(groups) <= 1:
+            return []
+
+        blocks: List[TextBlock] = []
+        for grp in groups:
+            grp_text = "\n".join(l.text for l in grp).strip()
+            if not grp_text:
+                continue
+            all_spans = [s for l in grp for s in l.spans]
+            max_sz = max((s.size for s in all_spans), default=10.0)
+            avg_sz = sum(s.size for s in all_spans) / max(1, len(all_spans))
+            bold_spans = sum(1 for s in all_spans if s.is_bold)
+            is_bold_dom = (bold_spans / max(1, len(all_spans))) > 0.5
+
+            valid_bboxes = [l.bbox for l in grp if l.bbox != (0.0, 0.0, 0.0, 0.0)]
+            x0 = min((b[0] for b in valid_bboxes), default=default_bbox[0])
+            y0 = min((b[1] for b in valid_bboxes), default=default_bbox[1])
+            x1 = max((b[2] for b in valid_bboxes), default=default_bbox[2])
+            y1 = max((b[3] for b in valid_bboxes), default=default_bbox[3])
+
+            blocks.append(
+                TextBlock(
+                    block_id=0,
+                    text=grp_text,
+                    bbox=(x0, y0, x1, y1),
+                    lines=grp,
+                    page_number=p_num,
+                    max_font_size=max_sz,
+                    avg_font_size=avg_sz,
+                    is_bold_dominant=is_bold_dom,
+                )
+            )
+        return blocks
 
     def _order_blocks_for_reading(
         self,
@@ -345,43 +459,72 @@ class PDFExtractor:
         return layout, ordered
 
     def _detect_and_tag_repeated_headers_footers(self, pages: List[PageExtractionResult]) -> None:
-        """Identify repeated running headers and footers across 3+ pages and tag them."""
-        if len(pages) < 2:
+        """Identify repeated running headers, footers, standalone page numbers, and publisher marks."""
+        if not pages:
             return
 
         header_lines: Dict[str, int] = {}
         footer_lines: Dict[str, int] = {}
 
-        # Collect candidate lines from top and bottom blocks
+        # Collect candidate lines from margin zones across all pages
         for p in pages:
             if not p.blocks:
                 continue
+            p_height = getattr(p, "page_height", 792.0) or 792.0
+            top_zone = p_height * max(self.header_margin_ratio, 0.08)
+            bottom_zone = p_height * (1.0 - max(self.footer_margin_ratio, 0.08))
+
             for b in p.blocks:
-                y0 = b.bbox[1]
-                # Check if block is near top or bottom
+                y0, y1 = b.bbox[1], b.bbox[3]
                 first_line = b.lines[0].text.strip() if b.lines else b.text.split("\n")[0].strip()
-                if len(first_line) > 5 and len(first_line) < 120:
-                    normalized = re.sub(r"\b\d+\b", "#", first_line).strip()
-                    if y0 < 80:
-                        header_lines[normalized] = header_lines.get(normalized, 0) + 1
-                    elif y0 > 700:
-                        footer_lines[normalized] = footer_lines.get(normalized, 0) + 1
+                if not first_line:
+                    continue
+                normalized = re.sub(r"\b\d+\b", "#", first_line).strip().lower()
+                if y0 <= top_zone + 15:
+                    header_lines[normalized] = header_lines.get(normalized, 0) + 1
+                elif y1 >= bottom_zone - 15 or y0 >= bottom_zone - 15:
+                    footer_lines[normalized] = footer_lines.get(normalized, 0) + 1
 
         repeated_headers = {k for k, count in header_lines.items() if count >= 2}
         repeated_footers = {k for k, count in footer_lines.items() if count >= 2}
 
+        # Standalone numbers or known publisher marks
+        re_standalone_num = re.compile(r"^(123|\d+|[ivxlcdm]+)$", re.IGNORECASE)
+        re_meta_footer = re.compile(
+            r"(www\.[a-z0-9\-]+\.[a-z]+|issn:\s*\d|paper id:\s*[a-z0-9]+|doi:\s*https?://|copyright\b|all rights reserved)",
+            re.IGNORECASE,
+        )
+
         for p in pages:
-            detected_for_page = []
-            cleaned_blocks = []
+            detected_for_page: List[str] = []
+            cleaned_blocks: List[TextBlock] = []
+            p_height = getattr(p, "page_height", 792.0) or 792.0
+            top_zone = p_height * max(self.header_margin_ratio, 0.08)
+            bottom_zone = p_height * (1.0 - max(self.footer_margin_ratio, 0.08))
+
             for b in p.blocks:
+                y0, y1 = b.bbox[1], b.bbox[3]
                 first_line = b.lines[0].text.strip() if b.lines else b.text.split("\n")[0].strip()
-                normalized = re.sub(r"\b\d+\b", "#", first_line).strip()
-                if normalized in repeated_headers or normalized in repeated_footers:
+                normalized = re.sub(r"\b\d+\b", "#", first_line).strip().lower()
+
+                is_top = (y0 <= top_zone + 15)
+                is_bottom = (y1 >= bottom_zone - 15 or y0 >= bottom_zone - 15)
+
+                is_hf = False
+                if (is_top and normalized in repeated_headers) or (is_bottom and normalized in repeated_footers):
+                    is_hf = True
+                elif is_bottom and (re_standalone_num.match(b.text.strip()) or re_meta_footer.search(b.text)):
+                    is_hf = True
+                elif is_top and re_standalone_num.match(b.text.strip()):
+                    is_hf = True
+
+                if is_hf:
                     b.is_header_or_footer = True
                     detected_for_page.append(first_line)
                 else:
                     cleaned_blocks.append(b)
 
             p.headers_footers = detected_for_page
-            # Update cleaned text without headers/footers
             p.cleaned_text = "\n\n".join(b.text for b in cleaned_blocks)
+            p.char_count = len(p.cleaned_text)
+            p.word_count = len(p.cleaned_text.split())

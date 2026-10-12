@@ -26,23 +26,64 @@ class ParagraphExtractor:
         self,
         sections: List[ProcessedSection],
         canonical_id: str,
+        document_id: Optional[str] = None,
+        file_hash: Optional[str] = None,
+        processing_version: str = "v0.2.0",
     ) -> Tuple[List[ProcessedParagraph], List[ProcessedSection]]:
-        """Extract paragraphs for each section and link paragraph IDs back to sections."""
+        """Extract paragraphs for each section with true page provenance and lineage linking."""
         all_paragraphs: List[ProcessedParagraph] = []
         doc_paragraph_order = 1
+        doc_id = document_id or f"doc_{canonical_id}"
 
         for sec in sections:
-            sec_raw_text = sec.text.strip()
-            if not sec_raw_text:
+            block_entries = getattr(sec, "_block_entries", None)
+            raw_entries: List[Tuple[int, str]] = []
+
+            if block_entries:
+                for pno, b_txt in block_entries:
+                    for sub_p in re.split(r"\n\s*\n+", b_txt):
+                        sub_p = sub_p.strip()
+                        if sub_p:
+                            raw_entries.append((pno, sub_p))
+            else:
+                sec_raw_text = sec.text.strip()
+                if sec_raw_text:
+                    for sub_p in re.split(r"\n\s*\n+", sec_raw_text):
+                        sub_p = sub_p.strip()
+                        if sub_p:
+                            raw_entries.append((sec.start_page, sub_p))
+
+            if not raw_entries:
                 continue
 
-            # Split text on double line breaks or major structural breaks
-            raw_blocks = [p.strip() for p in re.split(r"\n\s*\n+", sec_raw_text) if p.strip()]
+            # Merge cross-page paragraphs where a sentence spans page boundaries
+            merged_entries: List[Tuple[int, int, str]] = []
+            idx = 0
+            while idx < len(raw_entries):
+                p_page, p_text = raw_entries[idx]
+                end_page = p_page
+
+                while idx + 1 < len(raw_entries):
+                    next_page, next_text = raw_entries[idx + 1]
+                    if next_page == end_page + 1:
+                        ends_with_punc = bool(re.search(r'[.?!]["\']?\s*$', p_text))
+                        starts_lower = bool(re.match(r'^[a-z]', next_text))
+                        if not ends_with_punc and starts_lower:
+                            if p_text.endswith("-"):
+                                p_text = p_text[:-1] + next_text
+                            else:
+                                p_text = p_text + " " + next_text
+                            end_page = next_page
+                            idx += 1
+                            continue
+                    break
+
+                merged_entries.append((p_page, end_page, p_text))
+                idx += 1
 
             sec_paragraph_ids: List[str] = []
 
-            for blk in raw_blocks:
-                # Normalize internal linebreaks within the paragraph
+            for p_start_pg, p_end_pg, blk in merged_entries:
                 normalized_text = self._normalize_paragraph_text(blk)
                 if not normalized_text:
                     continue
@@ -53,10 +94,14 @@ class ParagraphExtractor:
                 p_obj = ProcessedParagraph(
                     paragraph_id=p_id,
                     canonical_id=canonical_id,
+                    document_id=doc_id,
+                    file_hash=file_hash,
                     section_id=sec.section_id,
                     section_title=sec.section_title,
-                    page_number=sec.start_page,
+                    page_number=p_start_pg,
+                    page_end=p_end_pg,
                     paragraph_order=doc_paragraph_order,
+                    processing_version=processing_version,
                     text=normalized_text,
                     char_count=len(normalized_text),
                     word_count=len(normalized_text.split()),
