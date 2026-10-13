@@ -77,6 +77,11 @@ class ExtractionEvaluationReport:
     scientific_precision: Optional[float] = None
     scientific_recall: Optional[float] = None
     scientific_f1: Optional[float] = None
+    relaxed_scientific_precision: Optional[float] = None
+    relaxed_scientific_recall: Optional[float] = None
+    relaxed_scientific_f1: Optional[float] = None
+    evidence_correctness_accuracy: Optional[float] = None
+    relation_extraction_metrics: Dict[str, Any] = field(default_factory=dict)
     category_scientific_metrics: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
 
@@ -204,31 +209,175 @@ class ExtractionEvaluator:
         predicted_records: List[Any],
         ground_truth: List[Dict[str, Any]],
     ) -> None:
-        """Compute precision, recall, and F1 when actual ground-truth labels are present."""
+        """Compute strict & relaxed precision/recall/F1, category-wise metrics, and evidence correctness."""
         report.ground_truth_status = "EVALUATED_AGAINST_GROUND_TRUTH"
         report.human_annotations_count = len(ground_truth)
 
-        # Exact matching on (chunk_id, category, normalized_text)
-        gt_set = {
-            (gt["chunk_id"], gt["category"], gt["normalized_text"].lower().strip())
-            for gt in ground_truth if gt.get("category") and gt.get("normalized_text")
-        }
+        # 1. Prepare structured records
+        # Ground truth format: Dict with {chunk_id, category, normalized_text, evidence_span, source, target}
+        gt_items = []
+        for gt in ground_truth:
+            cat = str(gt.get("category", "")).strip().upper()
+            norm = str(gt.get("normalized_text", "")).lower().strip()
+            cid = str(gt.get("chunk_id", "")).strip()
+            ev = str(gt.get("evidence_span", "")).lower().strip()
+            src = str(gt.get("source", "")).lower().strip()
+            tgt = str(gt.get("target", "")).lower().strip()
+            if cat and (norm or (src and tgt)):
+                gt_items.append({
+                    "chunk_id": cid,
+                    "category": cat,
+                    "normalized_text": norm,
+                    "evidence_span": ev,
+                    "source": src,
+                    "target": tgt,
+                    "is_relation": bool(src and tgt),
+                })
 
-        pred_set = set()
+        pred_items = []
         for p in predicted_records:
             cat = getattr(p, "category", None) or getattr(p, "relation_type", None)
-            cat_str = cat.value if hasattr(cat, "value") else str(cat)
-            norm = getattr(p, "normalized_name", None) or getattr(p, "normalized_statement", None) or p.surface_text
-            pred_set.add((p.provenance.chunk_id, cat_str, norm.lower().strip()))
+            cat_str = (cat.value if hasattr(cat, "value") else str(cat)).strip().upper()
+            norm = (getattr(p, "normalized_name", None) or getattr(p, "normalized_statement", None) or p.surface_text or "").lower().strip()
+            cid = p.provenance.chunk_id
+            ev = (p.evidence.text if getattr(p, "evidence", None) else "").lower().strip()
+            src = (getattr(p, "source_id", "") or "").lower().strip()
+            tgt = (getattr(p, "target_id", "") or "").lower().strip()
+            is_rel = hasattr(p, "relation_type") or hasattr(p, "source_id")
+            pred_items.append({
+                "chunk_id": cid,
+                "category": cat_str,
+                "normalized_text": norm,
+                "evidence_span": ev,
+                "source": src,
+                "target": tgt,
+                "is_relation": is_rel,
+                "original": p,
+            })
 
-        tp = len(gt_set.intersection(pred_set))
-        fp = len(pred_set - gt_set)
-        fn = len(gt_set - pred_set)
+        # 2. Strict Matching: exact (chunk_id, category, normalized_text)
+        gt_strict_set = {(g["chunk_id"], g["category"], g["normalized_text"]) for g in gt_items if not g["is_relation"]}
+        pred_strict_set = {(p["chunk_id"], p["category"], p["normalized_text"]) for p in pred_items if not p["is_relation"]}
 
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+        tp_strict = len(gt_strict_set.intersection(pred_strict_set))
+        fp_strict = len(pred_strict_set - gt_strict_set)
+        fn_strict = len(gt_strict_set - pred_strict_set)
 
-        report.scientific_precision = round(precision, 4)
-        report.scientific_recall = round(recall, 4)
-        report.scientific_f1 = round(f1, 4)
+        prec_strict = tp_strict / (tp_strict + fp_strict) if (tp_strict + fp_strict) > 0 else 0.0
+        rec_strict = tp_strict / (tp_strict + fn_strict) if (tp_strict + fn_strict) > 0 else 0.0
+        f1_strict = (2 * prec_strict * rec_strict / (prec_strict + rec_strict)) if (prec_strict + rec_strict) > 0 else 0.0
+
+        report.scientific_precision = round(prec_strict, 4)
+        report.scientific_recall = round(rec_strict, 4)
+        report.scientific_f1 = round(f1_strict, 4)
+
+        # 3. Category-Wise Metrics (Strict)
+        all_categories = sorted(list({g["category"] for g in gt_items}.union({p["category"] for p in pred_items})))
+        cat_metrics: Dict[str, Dict[str, Any]] = {}
+
+        for cat in all_categories:
+            gt_cat = {(g["chunk_id"], g["normalized_text"]) for g in gt_items if g["category"] == cat}
+            pred_cat = {(p["chunk_id"], p["normalized_text"]) for p in pred_items if p["category"] == cat}
+
+            tp_c = len(gt_cat.intersection(pred_cat))
+            fp_c = len(pred_cat - gt_cat)
+            fn_c = len(gt_cat - pred_cat)
+
+            p_c = tp_c / (tp_c + fp_c) if (tp_c + fp_c) > 0 else 0.0
+            r_c = tp_c / (tp_c + fn_c) if (tp_c + fn_c) > 0 else 0.0
+            f_c = (2 * p_c * r_c / (p_c + r_c)) if (p_c + r_c) > 0 else 0.0
+
+            cat_metrics[cat] = {
+                "category": cat,
+                "true_positives": tp_c,
+                "false_positives": fp_c,
+                "false_negatives": fn_c,
+                "precision": round(p_c, 4),
+                "recall": round(r_c, 4),
+                "f1_score": round(f_c, 4),
+            }
+
+        report.category_scientific_metrics = cat_metrics
+
+        # 4. Relaxed Matching (handles partial matches and token overlap)
+        matched_gt_indices = set()
+        tp_relaxed = 0
+
+        for p in pred_items:
+            for g_idx, g in enumerate(gt_items):
+                if g_idx in matched_gt_indices:
+                    continue
+                if p["chunk_id"] == g["chunk_id"] and p["category"] == g["category"]:
+                    # Check token overlap or substring match
+                    p_tokens = set(p["normalized_text"].split())
+                    g_tokens = set(g["normalized_text"].split())
+                    is_sub = (p["normalized_text"] in g["normalized_text"]) or (g["normalized_text"] in p["normalized_text"])
+                    token_overlap = len(p_tokens & g_tokens) / max(1, len(p_tokens | g_tokens))
+
+                    if is_sub or token_overlap >= 0.5:
+                        tp_relaxed += 1
+                        matched_gt_indices.add(g_idx)
+                        break
+
+        fp_relaxed = max(0, len(pred_items) - tp_relaxed)
+        fn_relaxed = max(0, len(gt_items) - tp_relaxed)
+
+        prec_relaxed = tp_relaxed / (tp_relaxed + fp_relaxed) if (tp_relaxed + fp_relaxed) > 0 else 0.0
+        rec_relaxed = tp_relaxed / (tp_relaxed + fn_relaxed) if (tp_relaxed + fn_relaxed) > 0 else 0.0
+        f1_relaxed = (2 * prec_relaxed * rec_relaxed / (prec_relaxed + rec_relaxed)) if (prec_relaxed + rec_relaxed) > 0 else 0.0
+
+        report.relaxed_scientific_precision = round(prec_relaxed, 4)
+        report.relaxed_scientific_recall = round(rec_relaxed, 4)
+        report.relaxed_scientific_f1 = round(f1_relaxed, 4)
+
+        # 5. Evidence Correctness Evaluation
+        # For matched entities, check if predicted evidence overlaps with ground truth evidence span
+        correct_evidence_count = 0
+        ev_evaluable_count = 0
+
+        for p in pred_items:
+            for g in gt_items:
+                if p["chunk_id"] == g["chunk_id"] and p["category"] == g["category"] and p["normalized_text"] == g["normalized_text"]:
+                    if g["evidence_span"]:
+                        ev_evaluable_count += 1
+                        if g["evidence_span"] in p["evidence_span"] or p["evidence_span"] in g["evidence_span"]:
+                            correct_evidence_count += 1
+                    break
+
+        ev_acc = (correct_evidence_count / ev_evaluable_count) if ev_evaluable_count > 0 else 1.0
+        report.evidence_correctness_accuracy = round(ev_acc, 4)
+
+        # 6. Relationship Extraction Specific Metrics
+        gt_rels = [g for g in gt_items if g["is_relation"]]
+        pred_rels = [p for p in pred_items if p["is_relation"]]
+
+        if gt_rels or pred_rels:
+            gt_rel_set = {(g["chunk_id"], g["category"]) for g in gt_rels}
+            pred_rel_set = {(p["chunk_id"], p["category"]) for p in pred_rels}
+
+            tp_rel = len(gt_rel_set.intersection(pred_rel_set))
+            fp_rel = len(pred_rel_set - gt_rel_set)
+            fn_rel = len(gt_rel_set - pred_rel_set)
+
+            p_rel = tp_rel / (tp_rel + fp_rel) if (tp_rel + fp_rel) > 0 else 0.0
+            r_rel = tp_rel / (tp_rel + fn_rel) if (tp_rel + fn_rel) > 0 else 0.0
+            f_rel = (2 * p_rel * r_rel / (p_rel + r_rel)) if (p_rel + r_rel) > 0 else 0.0
+
+            report.relation_extraction_metrics = {
+                "ground_truth_relations_count": len(gt_rels),
+                "predicted_relations_count": len(pred_rels),
+                "true_positives": tp_rel,
+                "false_positives": fp_rel,
+                "false_negatives": fn_rel,
+                "precision": round(p_rel, 4),
+                "recall": round(r_rel, 4),
+                "f1_score": round(f_rel, 4),
+            }
+        else:
+            report.relation_extraction_metrics = {
+                "ground_truth_relations_count": 0,
+                "predicted_relations_count": 0,
+                "precision": None,
+                "recall": None,
+                "f1_score": None,
+            }
