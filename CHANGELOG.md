@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-10-13
+
+### Added
+- **Phase 3: Scientific Information Extraction Pipeline**:
+  - `dataset/schemas/scientific_knowledge.py`: Formally typed, evidence-grounded Pydantic schemas for scientific entities (`METHOD`, `PROBLEM`, `BOTTLENECK`, `METRIC`, `DATASET`, `TASK`, `ASSUMPTION`, `DOMAIN`), scientific statements (`CLAIM`, `RESULT`, `LIMITATION`, `FUTURE_DIRECTION`, `FAILURE_MODE`), and semantic relationships (`ADDRESSES`, `USES`, `IMPROVES`, `OUTPERFORMS`, `LIMITED_BY`, `EVALUATED_ON`, `ASSUMES`, `REPORTS`, `SUGGESTS`, `CONTRADICTS`).
+  - Strict distinction between `AUTHOR_STATED` assertions and `SYSTEM_INFERRED` deductions.
+  - `dataset/schemas/scientific_knowledge.json`: Exported formal JSON Schema definition.
+- **Evidence Grounding & Provenance Validation Engine**:
+  - `EvidenceGroundingValidator` (`pipelines/extraction/validator.py`): Enforces exact character offset matching, validates chunk and canonical document provenance, flags hedged claims in empirical categories (`NEEDS_REVIEW`), and rejects ungrounded hallucinations (`REJECTED`).
+- **Conservative Normalization**:
+  - `ScientificNormalizer` (`pipelines/extraction/normalizer.py`): Preserves domain acronyms (`CNN`, `LSTM`, `BERT`, `NSL-KDD`), strips leading bullets and outer punctuation, and preserves modal hedges and negative polarities.
+- **Deterministic Sampling Pilot**:
+  - `ChunkSampler` (`pipelines/extraction/selection.py`): Reproducible stratified chunk selection (`seed=42`, `target_size=75`) across 23 distinct papers, 5 functional section buckets, and controlled edge cases (short chunks, dense quantitative metrics).
+- **Replaceable Extraction Architecture**:
+  - `RuleBasedScientificExtractor` (`pipelines/extraction/extractor.py`): High-precision discourse marker and syntactic frame baseline with exact character span tracking.
+  - `LLMScientificExtractor` (`pipelines/extraction/extractor.py`): Structured-output LLM interface with fallback and graceful offline execution.
+- **Evaluation & Human Annotation Benchmark**:
+  - `ExtractionEvaluator` (`pipelines/extraction/evaluator.py`): Measures exact engineering metrics and separates pending scientific quality from measured engineering conformance.
+  - `dataset/manifests/scientific_extraction_v0.4.0_annotation_template.csv`: Standardized 75-chunk review file with blank human label columns for unbiased verification.
+  - `dataset/manifests/scientific_extraction_v0.4.0_annotation_guidelines.md`: Annotation protocol, definitions, and review criteria.
+  - `dataset/manifests/scientific_extraction_pilot_v0.4.0_manifest.json`: Release manifest.
+  - `dataset/manifests/scientific_extraction_pilot_v0.4.0_quality_report.json` and `.md`: Quality and evaluation reports.
+- **Unit & Integration Test Suite**:
+  - Added 29 new tests across `test_scientific_extraction_schema.py`, `test_scientific_extraction_evidence.py`, `test_scientific_extraction_normalizer.py`, `test_scientific_extraction_sampler.py`, `test_scientific_extractor.py`, and `test_scientific_extraction_pipeline.py`.
+  - Expanded repository test suite to 105 total passing tests.
+
+---
+
 ## [0.1.2] - 2026-10-07
 
 ### Added

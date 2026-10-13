@@ -1,0 +1,46 @@
+{
+  "pipeline_version": "v0.4.0",
+  "schema_version": "0.4.0",
+  "timestamp": "2026-10-13T08:53:41.892865+00:00",
+  "total_chunks": 75,
+  "total_entities_extracted": 174,
+  "total_statements_extracted": 5,
+  "total_relations_extracted": 12,
+  "total_candidate_records": 191,
+  "total_validated_records": 191,
+  "total_needs_review_records": 0,
+  "total_rejected_records": 0,
+  "validation_pass_rate": 1.0,
+  "rejection_rate": 0.0,
+  "needs_review_rate": 0.0,
+  "evidence_grounding_accuracy": 1.0,
+  "provenance_validity_rate": 1.0,
+  "unsupported_claim_rate": 0.0,
+  "empty_output_chunk_count": 30,
+  "empty_output_chunk_rate": 0.4,
+  "entity_counts_by_category": {
+    "METHOD": 102,
+    "DOMAIN": 45,
+    "PROBLEM": 3,
+    "METRIC": 20,
+    "TASK": 2,
+    "BOTTLENECK": 2
+  },
+  "statement_counts_by_category": {
+    "CLAIM": 1,
+    "FUTURE_DIRECTION": 4
+  },
+  "relation_counts_by_category": {
+    "ADDRESSES": 8,
+    "LIMITED_BY": 4
+  },
+  "rejection_reasons_breakdown": {},
+  "total_duration_ms": 758.23,
+  "avg_latency_per_chunk_ms": 10.11,
+  "ground_truth_status": "PENDING_HUMAN_ANNOTATION",
+  "human_annotations_count": 0,
+  "scientific_precision": null,
+  "scientific_recall": null,
+  "scientific_f1": null,
+  "category_scientific_metrics": {}
+}
