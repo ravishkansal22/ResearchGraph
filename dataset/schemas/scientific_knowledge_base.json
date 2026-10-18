@@ -1,0 +1,1623 @@
+{
+  "canonical_paper_node": {
+    "$defs": {
+      "Author": {
+        "description": "Normalized author representation.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Last Name"
+          },
+          "orcid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Orcid"
+          },
+          "affiliations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affiliations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Author",
+        "type": "object"
+      },
+      "Topic": {
+        "description": "Normalized topic, concept, or domain tag.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Score"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Topic",
+        "type": "object"
+      },
+      "Venue": {
+        "description": "Normalized publication venue (journal, conference, preprint server, book series).",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Type"
+          },
+          "issn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Issn"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Isbn"
+          },
+          "raw_venue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Raw Venue"
+          }
+        },
+        "title": "Venue",
+        "type": "object"
+      }
+    },
+    "description": "Canonical representation of a scientific paper within the knowledge base.",
+    "properties": {
+      "paper_id": {
+        "description": "Stable canonical paper identifier (e.g. rg_doi_xxx)",
+        "title": "Paper Id",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": "0.5.0",
+        "description": "Schema definition version",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "doi": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Normalized DOI string",
+        "title": "Doi"
+      },
+      "arxiv_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Normalized arXiv identifier",
+        "title": "Arxiv Id"
+      },
+      "title": {
+        "description": "Normalized paper title",
+        "title": "Title",
+        "type": "string"
+      },
+      "abstract": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Full abstract text",
+        "title": "Abstract"
+      },
+      "publication_year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Year of publication",
+        "title": "Publication Year"
+      },
+      "venue": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Venue"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Publication venue details"
+      },
+      "authors": {
+        "description": "Ordered list of authors",
+        "items": {
+          "$ref": "#/$defs/Author"
+        },
+        "title": "Authors",
+        "type": "array"
+      },
+      "topics": {
+        "description": "Domain and concept topics",
+        "items": {
+          "$ref": "#/$defs/Topic"
+        },
+        "title": "Topics",
+        "type": "array"
+      },
+      "open_access_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Direct URL to open-access paper",
+        "title": "Open Access Url"
+      },
+      "file_hash": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "SHA-256 hash of source PDF artifact",
+        "title": "File Hash"
+      },
+      "total_entities_count": {
+        "default": 0,
+        "description": "Count of extracted entities linked to paper",
+        "title": "Total Entities Count",
+        "type": "integer"
+      },
+      "total_statements_count": {
+        "default": 0,
+        "description": "Count of statements linked to paper",
+        "title": "Total Statements Count",
+        "type": "integer"
+      },
+      "total_relationships_count": {
+        "default": 0,
+        "description": "Count of relations linked to paper",
+        "title": "Total Relationships Count",
+        "type": "integer"
+      },
+      "created_at": {
+        "title": "Created At",
+        "type": "string"
+      }
+    },
+    "required": [
+      "paper_id",
+      "title"
+    ],
+    "title": "CanonicalPaperNode",
+    "type": "object"
+  },
+  "canonical_entity_node": {
+    "$defs": {
+      "AliasResolutionStatus": {
+        "description": "Resolution status of concept aliases and lexical variants.",
+        "enum": [
+          "CONFIRMED",
+          "CANDIDATE",
+          "UNRESOLVED",
+          "SEPARATE"
+        ],
+        "title": "AliasResolutionStatus",
+        "type": "string"
+      },
+      "ScientificEntityType": {
+        "description": "Scientific entity and concept categories.",
+        "enum": [
+          "METHOD",
+          "PROBLEM",
+          "BOTTLENECK",
+          "METRIC",
+          "DATASET",
+          "TASK",
+          "ASSUMPTION",
+          "DOMAIN"
+        ],
+        "title": "ScientificEntityType",
+        "type": "string"
+      },
+      "ValidationStatus": {
+        "description": "Quality and evidence grounding verification status.",
+        "enum": [
+          "VALIDATED",
+          "NEEDS_REVIEW",
+          "REJECTED"
+        ],
+        "title": "ValidationStatus",
+        "type": "string"
+      }
+    },
+    "description": "Consolidated, canonical scientific concept or entity in the knowledge base.",
+    "properties": {
+      "entity_id": {
+        "description": "Stable deterministic entity ID (e.g. kb_ent_method_xxx)",
+        "title": "Entity Id",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": "0.5.0",
+        "description": "Schema definition version",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/$defs/ScientificEntityType",
+        "description": "Scientific entity category"
+      },
+      "canonical_name": {
+        "description": "Normalized canonical concept label",
+        "title": "Canonical Name",
+        "type": "string"
+      },
+      "aliases": {
+        "description": "Confirmed synonym and surface variants",
+        "items": {
+          "type": "string"
+        },
+        "title": "Aliases",
+        "type": "array"
+      },
+      "mentions_count": {
+        "default": 1,
+        "description": "Total occurrences across the corpus",
+        "title": "Mentions Count",
+        "type": "integer"
+      },
+      "paper_ids": {
+        "description": "List of papers where entity is mentioned",
+        "items": {
+          "type": "string"
+        },
+        "title": "Paper Ids",
+        "type": "array"
+      },
+      "chunk_ids": {
+        "description": "List of chunks containing mentions",
+        "items": {
+          "type": "string"
+        },
+        "title": "Chunk Ids",
+        "type": "array"
+      },
+      "mention_ids": {
+        "description": "Foreign keys to individual EntityMentions",
+        "items": {
+          "type": "string"
+        },
+        "title": "Mention Ids",
+        "type": "array"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Grounded concept definition or description",
+        "title": "Description"
+      },
+      "validation_status": {
+        "$ref": "#/$defs/ValidationStatus",
+        "default": "VALIDATED",
+        "description": "Validation status"
+      },
+      "alias_resolution_status": {
+        "$ref": "#/$defs/AliasResolutionStatus",
+        "default": "CONFIRMED",
+        "description": "Confidence of alias consolidation"
+      },
+      "first_seen_version": {
+        "default": "v0.4.0",
+        "description": "Earliest pipeline version where entity appeared",
+        "title": "First Seen Version",
+        "type": "string"
+      },
+      "updated_at": {
+        "title": "Updated At",
+        "type": "string"
+      }
+    },
+    "required": [
+      "entity_id",
+      "category",
+      "canonical_name"
+    ],
+    "title": "CanonicalEntityNode",
+    "type": "object"
+  },
+  "entity_mention": {
+    "$defs": {
+      "AttributionType": {
+        "description": "Epistemological attribution of the extracted knowledge.",
+        "enum": [
+          "AUTHOR_STATED",
+          "SYSTEM_INFERRED"
+        ],
+        "title": "AttributionType",
+        "type": "string"
+      },
+      "EvidenceSpan": {
+        "description": "Cryptographic and character-level evidence span linking extraction to source text.",
+        "properties": {
+          "text": {
+            "description": "Exact textual evidence quotation extracted from chunk",
+            "title": "Text",
+            "type": "string"
+          },
+          "start_char": {
+            "description": "0-indexed start character offset in chunk text",
+            "minimum": 0,
+            "title": "Start Char",
+            "type": "integer"
+          },
+          "end_char": {
+            "description": "0-indexed end character offset in chunk text",
+            "exclusiveMinimum": 0,
+            "title": "End Char",
+            "type": "integer"
+          },
+          "is_exact_match": {
+            "default": true,
+            "description": "True if text matches chunk[start_char:end_char] exactly",
+            "title": "Is Exact Match",
+            "type": "boolean"
+          },
+          "confidence": {
+            "default": 1.0,
+            "description": "Confidence in evidence boundary alignment",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "start_char",
+          "end_char"
+        ],
+        "title": "EvidenceSpan",
+        "type": "object"
+      },
+      "ExtractionProvenance": {
+        "description": "Complete document, section, and chunk provenance for reproducibility.",
+        "properties": {
+          "canonical_id": {
+            "description": "Canonical paper identifier (e.g. rg_doi_xxx)",
+            "title": "Canonical Id",
+            "type": "string"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Document processing identifier",
+            "title": "Document Id"
+          },
+          "chunk_id": {
+            "description": "Source chunk identifier (e.g. chk_rg_xxx_A_001)",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section identifier",
+            "title": "Section Id"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section heading",
+            "title": "Section Title"
+          },
+          "section_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Section hierarchy level",
+            "title": "Section Level"
+          },
+          "page_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Starting physical page number",
+            "title": "Page Start"
+          },
+          "page_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Ending physical page number",
+            "title": "Page End"
+          },
+          "file_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SHA-256 hash of source PDF",
+            "title": "File Hash"
+          }
+        },
+        "required": [
+          "canonical_id",
+          "chunk_id"
+        ],
+        "title": "ExtractionProvenance",
+        "type": "object"
+      },
+      "ScientificEntityType": {
+        "description": "Scientific entity and concept categories.",
+        "enum": [
+          "METHOD",
+          "PROBLEM",
+          "BOTTLENECK",
+          "METRIC",
+          "DATASET",
+          "TASK",
+          "ASSUMPTION",
+          "DOMAIN"
+        ],
+        "title": "ScientificEntityType",
+        "type": "string"
+      },
+      "ValidationStatus": {
+        "description": "Quality and evidence grounding verification status.",
+        "enum": [
+          "VALIDATED",
+          "NEEDS_REVIEW",
+          "REJECTED"
+        ],
+        "title": "ValidationStatus",
+        "type": "string"
+      }
+    },
+    "description": "Individual textual occurrence of a scientific entity grounded in a specific chunk.",
+    "properties": {
+      "mention_id": {
+        "description": "Stable unique mention ID (e.g. ent_men_xxx)",
+        "title": "Mention Id",
+        "type": "string"
+      },
+      "entity_id": {
+        "description": "Foreign key to CanonicalEntityNode",
+        "title": "Entity Id",
+        "type": "string"
+      },
+      "paper_id": {
+        "description": "Foreign key to CanonicalPaperNode",
+        "title": "Paper Id",
+        "type": "string"
+      },
+      "chunk_id": {
+        "description": "Source chunk identifier",
+        "title": "Chunk Id",
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/$defs/ScientificEntityType",
+        "description": "Scientific entity category"
+      },
+      "surface_text": {
+        "description": "Exact original surface text as appeared in chunk",
+        "title": "Surface Text",
+        "type": "string"
+      },
+      "normalized_name": {
+        "description": "Conservative normalized form of mention",
+        "title": "Normalized Name",
+        "type": "string"
+      },
+      "evidence": {
+        "$ref": "#/$defs/EvidenceSpan",
+        "description": "Character-level supporting evidence span"
+      },
+      "provenance": {
+        "$ref": "#/$defs/ExtractionProvenance",
+        "description": "Complete extraction provenance"
+      },
+      "attribution": {
+        "$ref": "#/$defs/AttributionType",
+        "default": "AUTHOR_STATED",
+        "description": "Attribution origin"
+      },
+      "confidence_score": {
+        "default": 1.0,
+        "description": "Extraction confidence",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence Score",
+        "type": "number"
+      },
+      "extraction_version": {
+        "default": "v0.4.1",
+        "description": "Originating pipeline version",
+        "title": "Extraction Version",
+        "type": "string"
+      },
+      "validation_status": {
+        "$ref": "#/$defs/ValidationStatus",
+        "default": "VALIDATED",
+        "description": "Grounding status"
+      },
+      "upstream_record_id": {
+        "description": "Record ID from upstream extraction stage",
+        "title": "Upstream Record Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "mention_id",
+      "entity_id",
+      "paper_id",
+      "chunk_id",
+      "category",
+      "surface_text",
+      "normalized_name",
+      "evidence",
+      "provenance",
+      "upstream_record_id"
+    ],
+    "title": "EntityMention",
+    "type": "object"
+  },
+  "canonical_statement_node": {
+    "$defs": {
+      "AttributionType": {
+        "description": "Epistemological attribution of the extracted knowledge.",
+        "enum": [
+          "AUTHOR_STATED",
+          "SYSTEM_INFERRED"
+        ],
+        "title": "AttributionType",
+        "type": "string"
+      },
+      "EvidenceSpan": {
+        "description": "Cryptographic and character-level evidence span linking extraction to source text.",
+        "properties": {
+          "text": {
+            "description": "Exact textual evidence quotation extracted from chunk",
+            "title": "Text",
+            "type": "string"
+          },
+          "start_char": {
+            "description": "0-indexed start character offset in chunk text",
+            "minimum": 0,
+            "title": "Start Char",
+            "type": "integer"
+          },
+          "end_char": {
+            "description": "0-indexed end character offset in chunk text",
+            "exclusiveMinimum": 0,
+            "title": "End Char",
+            "type": "integer"
+          },
+          "is_exact_match": {
+            "default": true,
+            "description": "True if text matches chunk[start_char:end_char] exactly",
+            "title": "Is Exact Match",
+            "type": "boolean"
+          },
+          "confidence": {
+            "default": 1.0,
+            "description": "Confidence in evidence boundary alignment",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "start_char",
+          "end_char"
+        ],
+        "title": "EvidenceSpan",
+        "type": "object"
+      },
+      "ExtractionProvenance": {
+        "description": "Complete document, section, and chunk provenance for reproducibility.",
+        "properties": {
+          "canonical_id": {
+            "description": "Canonical paper identifier (e.g. rg_doi_xxx)",
+            "title": "Canonical Id",
+            "type": "string"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Document processing identifier",
+            "title": "Document Id"
+          },
+          "chunk_id": {
+            "description": "Source chunk identifier (e.g. chk_rg_xxx_A_001)",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section identifier",
+            "title": "Section Id"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section heading",
+            "title": "Section Title"
+          },
+          "section_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Section hierarchy level",
+            "title": "Section Level"
+          },
+          "page_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Starting physical page number",
+            "title": "Page Start"
+          },
+          "page_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Ending physical page number",
+            "title": "Page End"
+          },
+          "file_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SHA-256 hash of source PDF",
+            "title": "File Hash"
+          }
+        },
+        "required": [
+          "canonical_id",
+          "chunk_id"
+        ],
+        "title": "ExtractionProvenance",
+        "type": "object"
+      },
+      "ScientificStatementType": {
+        "description": "Scientific statement and proposition categories.",
+        "enum": [
+          "CLAIM",
+          "RESULT",
+          "LIMITATION",
+          "FUTURE_DIRECTION",
+          "FAILURE_MODE"
+        ],
+        "title": "ScientificStatementType",
+        "type": "string"
+      },
+      "ValidationStatus": {
+        "description": "Quality and evidence grounding verification status.",
+        "enum": [
+          "VALIDATED",
+          "NEEDS_REVIEW",
+          "REJECTED"
+        ],
+        "title": "ValidationStatus",
+        "type": "string"
+      }
+    },
+    "description": "Grounded scientific proposition, claim, result, limitation, or future direction.",
+    "properties": {
+      "statement_id": {
+        "description": "Stable unique statement ID (e.g. kb_stmt_xxx)",
+        "title": "Statement Id",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": "0.5.0",
+        "description": "Schema definition version",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/$defs/ScientificStatementType",
+        "description": "Statement category"
+      },
+      "surface_text": {
+        "description": "Verbatim original sentence or clause",
+        "title": "Surface Text",
+        "type": "string"
+      },
+      "normalized_statement": {
+        "description": "Normalized statement representation",
+        "title": "Normalized Statement",
+        "type": "string"
+      },
+      "paper_id": {
+        "description": "Foreign key to CanonicalPaperNode",
+        "title": "Paper Id",
+        "type": "string"
+      },
+      "chunk_id": {
+        "description": "Source chunk identifier",
+        "title": "Chunk Id",
+        "type": "string"
+      },
+      "evidence": {
+        "$ref": "#/$defs/EvidenceSpan",
+        "description": "Character-level supporting evidence span"
+      },
+      "provenance": {
+        "$ref": "#/$defs/ExtractionProvenance",
+        "description": "Full source provenance"
+      },
+      "attribution": {
+        "$ref": "#/$defs/AttributionType",
+        "default": "AUTHOR_STATED",
+        "description": "Attribution origin"
+      },
+      "confidence_score": {
+        "default": 1.0,
+        "description": "Extraction confidence",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence Score",
+        "type": "number"
+      },
+      "extraction_version": {
+        "default": "v0.4.1",
+        "description": "Originating pipeline version",
+        "title": "Extraction Version",
+        "type": "string"
+      },
+      "validation_status": {
+        "$ref": "#/$defs/ValidationStatus",
+        "default": "VALIDATED",
+        "description": "Grounding status"
+      },
+      "validation_notes": {
+        "description": "Validation notes or warnings",
+        "items": {
+          "type": "string"
+        },
+        "title": "Validation Notes",
+        "type": "array"
+      },
+      "related_entity_ids": {
+        "description": "Linked CanonicalEntityNode IDs",
+        "items": {
+          "type": "string"
+        },
+        "title": "Related Entity Ids",
+        "type": "array"
+      },
+      "upstream_record_id": {
+        "description": "Record ID from upstream extraction stage",
+        "title": "Upstream Record Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "statement_id",
+      "category",
+      "surface_text",
+      "normalized_statement",
+      "paper_id",
+      "chunk_id",
+      "evidence",
+      "provenance",
+      "upstream_record_id"
+    ],
+    "title": "CanonicalStatementNode",
+    "type": "object"
+  },
+  "canonical_relationship_node": {
+    "$defs": {
+      "AttributionType": {
+        "description": "Epistemological attribution of the extracted knowledge.",
+        "enum": [
+          "AUTHOR_STATED",
+          "SYSTEM_INFERRED"
+        ],
+        "title": "AttributionType",
+        "type": "string"
+      },
+      "EvidenceSpan": {
+        "description": "Cryptographic and character-level evidence span linking extraction to source text.",
+        "properties": {
+          "text": {
+            "description": "Exact textual evidence quotation extracted from chunk",
+            "title": "Text",
+            "type": "string"
+          },
+          "start_char": {
+            "description": "0-indexed start character offset in chunk text",
+            "minimum": 0,
+            "title": "Start Char",
+            "type": "integer"
+          },
+          "end_char": {
+            "description": "0-indexed end character offset in chunk text",
+            "exclusiveMinimum": 0,
+            "title": "End Char",
+            "type": "integer"
+          },
+          "is_exact_match": {
+            "default": true,
+            "description": "True if text matches chunk[start_char:end_char] exactly",
+            "title": "Is Exact Match",
+            "type": "boolean"
+          },
+          "confidence": {
+            "default": 1.0,
+            "description": "Confidence in evidence boundary alignment",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "start_char",
+          "end_char"
+        ],
+        "title": "EvidenceSpan",
+        "type": "object"
+      },
+      "ExtractionProvenance": {
+        "description": "Complete document, section, and chunk provenance for reproducibility.",
+        "properties": {
+          "canonical_id": {
+            "description": "Canonical paper identifier (e.g. rg_doi_xxx)",
+            "title": "Canonical Id",
+            "type": "string"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Document processing identifier",
+            "title": "Document Id"
+          },
+          "chunk_id": {
+            "description": "Source chunk identifier (e.g. chk_rg_xxx_A_001)",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "section_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section identifier",
+            "title": "Section Id"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Containing section heading",
+            "title": "Section Title"
+          },
+          "section_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Section hierarchy level",
+            "title": "Section Level"
+          },
+          "page_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Starting physical page number",
+            "title": "Page Start"
+          },
+          "page_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Ending physical page number",
+            "title": "Page End"
+          },
+          "file_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SHA-256 hash of source PDF",
+            "title": "File Hash"
+          }
+        },
+        "required": [
+          "canonical_id",
+          "chunk_id"
+        ],
+        "title": "ExtractionProvenance",
+        "type": "object"
+      },
+      "ScientificRelationType": {
+        "description": "Grounded semantic relationships between scientific records.",
+        "enum": [
+          "ADDRESSES",
+          "USES",
+          "IMPROVES",
+          "OUTPERFORMS",
+          "LIMITED_BY",
+          "EVALUATED_ON",
+          "ASSUMES",
+          "REPORTS",
+          "SUGGESTS",
+          "CONTRADICTS"
+        ],
+        "title": "ScientificRelationType",
+        "type": "string"
+      },
+      "ValidationStatus": {
+        "description": "Quality and evidence grounding verification status.",
+        "enum": [
+          "VALIDATED",
+          "NEEDS_REVIEW",
+          "REJECTED"
+        ],
+        "title": "ValidationStatus",
+        "type": "string"
+      }
+    },
+    "description": "Verified semantic relationship between canonical entities or statements.",
+    "properties": {
+      "relationship_id": {
+        "description": "Stable unique relationship ID (e.g. kb_rel_xxx)",
+        "title": "Relationship Id",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": "0.5.0",
+        "description": "Schema definition version",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "relation_type": {
+        "$ref": "#/$defs/ScientificRelationType",
+        "description": "Semantic relation predicate"
+      },
+      "source_id": {
+        "description": "Foreign key to subject node (entity or statement)",
+        "title": "Source Id",
+        "type": "string"
+      },
+      "target_id": {
+        "description": "Foreign key to object node (entity or statement)",
+        "title": "Target Id",
+        "type": "string"
+      },
+      "source_type": {
+        "default": "ENTITY",
+        "description": "'ENTITY' or 'STATEMENT'",
+        "title": "Source Type",
+        "type": "string"
+      },
+      "target_type": {
+        "default": "ENTITY",
+        "description": "'ENTITY' or 'STATEMENT'",
+        "title": "Target Type",
+        "type": "string"
+      },
+      "paper_id": {
+        "description": "Foreign key to CanonicalPaperNode",
+        "title": "Paper Id",
+        "type": "string"
+      },
+      "chunk_id": {
+        "description": "Source chunk identifier",
+        "title": "Chunk Id",
+        "type": "string"
+      },
+      "surface_text": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Connecting phrase or trigger span in text",
+        "title": "Surface Text"
+      },
+      "evidence": {
+        "$ref": "#/$defs/EvidenceSpan",
+        "description": "Supporting evidence span for relation"
+      },
+      "provenance": {
+        "$ref": "#/$defs/ExtractionProvenance",
+        "description": "Full source provenance"
+      },
+      "attribution": {
+        "$ref": "#/$defs/AttributionType",
+        "default": "AUTHOR_STATED",
+        "description": "Attribution origin"
+      },
+      "is_directed": {
+        "default": true,
+        "description": "True if relationship is directed",
+        "title": "Is Directed",
+        "type": "boolean"
+      },
+      "confidence_score": {
+        "default": 1.0,
+        "description": "Extraction confidence score",
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence Score",
+        "type": "number"
+      },
+      "extraction_version": {
+        "default": "v0.4.1",
+        "description": "Originating pipeline version",
+        "title": "Extraction Version",
+        "type": "string"
+      },
+      "validation_status": {
+        "$ref": "#/$defs/ValidationStatus",
+        "default": "VALIDATED",
+        "description": "Grounding status"
+      },
+      "upstream_relation_id": {
+        "description": "Relation ID from upstream extraction stage",
+        "title": "Upstream Relation Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "relationship_id",
+      "relation_type",
+      "source_id",
+      "target_id",
+      "paper_id",
+      "chunk_id",
+      "evidence",
+      "provenance",
+      "upstream_relation_id"
+    ],
+    "title": "CanonicalRelationshipNode",
+    "type": "object"
+  },
+  "quarantined_record": {
+    "$defs": {
+      "QuarantineReason": {
+        "description": "Diagnostic categorization for quarantined extraction records.",
+        "enum": [
+          "DANGLING_RELATION_ENDPOINT",
+          "MISSING_PROVENANCE_FIELD",
+          "INVALID_SPAN_BOUNDS",
+          "SCHEMA_VALIDATION_ERROR",
+          "UNGROUNDED_EVIDENCE",
+          "DUPLICATE_IMPORT_COLLISION",
+          "UNKNOWN"
+        ],
+        "title": "QuarantineReason",
+        "type": "string"
+      }
+    },
+    "description": "Quarantine container for extraction records failing validation or referential integrity.",
+    "properties": {
+      "quarantine_id": {
+        "description": "Stable quarantine record ID (e.g. kb_quar_xxx)",
+        "title": "Quarantine Id",
+        "type": "string"
+      },
+      "record_type": {
+        "description": "'ENTITY', 'STATEMENT', or 'RELATIONSHIP'",
+        "title": "Record Type",
+        "type": "string"
+      },
+      "quarantine_reason": {
+        "$ref": "#/$defs/QuarantineReason",
+        "description": "Diagnostic failure reason"
+      },
+      "error_message": {
+        "description": "Detailed diagnostic error message",
+        "title": "Error Message",
+        "type": "string"
+      },
+      "source_version": {
+        "default": "unknown",
+        "description": "Upstream extractor version",
+        "title": "Source Version",
+        "type": "string"
+      },
+      "upstream_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Original record/relation ID if present",
+        "title": "Upstream Id"
+      },
+      "raw_payload": {
+        "additionalProperties": true,
+        "description": "Complete original raw record payload",
+        "title": "Raw Payload",
+        "type": "object"
+      },
+      "timestamp": {
+        "title": "Timestamp",
+        "type": "string"
+      }
+    },
+    "required": [
+      "quarantine_id",
+      "record_type",
+      "quarantine_reason",
+      "error_message",
+      "raw_payload"
+    ],
+    "title": "QuarantinedRecord",
+    "type": "object"
+  },
+  "alias_mapping": {
+    "$defs": {
+      "AliasResolutionStatus": {
+        "description": "Resolution status of concept aliases and lexical variants.",
+        "enum": [
+          "CONFIRMED",
+          "CANDIDATE",
+          "UNRESOLVED",
+          "SEPARATE"
+        ],
+        "title": "AliasResolutionStatus",
+        "type": "string"
+      },
+      "ScientificEntityType": {
+        "description": "Scientific entity and concept categories.",
+        "enum": [
+          "METHOD",
+          "PROBLEM",
+          "BOTTLENECK",
+          "METRIC",
+          "DATASET",
+          "TASK",
+          "ASSUMPTION",
+          "DOMAIN"
+        ],
+        "title": "ScientificEntityType",
+        "type": "string"
+      }
+    },
+    "description": "Explicit mapping between a surface variation and its canonical entity name.",
+    "properties": {
+      "surface_form": {
+        "description": "Normalized surface variant (e.g. 'cnn')",
+        "title": "Surface Form",
+        "type": "string"
+      },
+      "canonical_name": {
+        "description": "Canonical representative name (e.g. 'convolutional neural network')",
+        "title": "Canonical Name",
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/$defs/ScientificEntityType",
+        "description": "Associated scientific entity category"
+      },
+      "status": {
+        "$ref": "#/$defs/AliasResolutionStatus",
+        "default": "CONFIRMED",
+        "description": "Resolution status"
+      },
+      "rationale": {
+        "default": "Acronym / Full name expansion",
+        "description": "Scholarly or linguistic rationale",
+        "title": "Rationale",
+        "type": "string"
+      }
+    },
+    "required": [
+      "surface_form",
+      "canonical_name",
+      "category"
+    ],
+    "title": "AliasMapping",
+    "type": "object"
+  },
+  "knowledge_base_manifest": {
+    "description": "Comprehensive, reproducible build manifest for the Scientific Knowledge Base.",
+    "properties": {
+      "kb_version": {
+        "default": "v0.5.0",
+        "description": "Knowledge base release version",
+        "title": "Kb Version",
+        "type": "string"
+      },
+      "schema_version": {
+        "default": "0.5.0",
+        "description": "Schema version",
+        "title": "Schema Version",
+        "type": "string"
+      },
+      "build_timestamp": {
+        "title": "Build Timestamp",
+        "type": "string"
+      },
+      "upstream_sources": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Paths and versions of upstream inputs",
+        "title": "Upstream Sources",
+        "type": "object"
+      },
+      "total_papers_count": {
+        "default": 0,
+        "description": "Total canonical papers ingested",
+        "title": "Total Papers Count",
+        "type": "integer"
+      },
+      "total_canonical_entities_count": {
+        "default": 0,
+        "description": "Total unique canonical entities",
+        "title": "Total Canonical Entities Count",
+        "type": "integer"
+      },
+      "total_entity_mentions_count": {
+        "default": 0,
+        "description": "Total individual entity mentions grounded",
+        "title": "Total Entity Mentions Count",
+        "type": "integer"
+      },
+      "total_statements_count": {
+        "default": 0,
+        "description": "Total scientific statements",
+        "title": "Total Statements Count",
+        "type": "integer"
+      },
+      "total_relationships_count": {
+        "default": 0,
+        "description": "Total verified relationships",
+        "title": "Total Relationships Count",
+        "type": "integer"
+      },
+      "total_quarantined_records_count": {
+        "default": 0,
+        "description": "Total records quarantined",
+        "title": "Total Quarantined Records Count",
+        "type": "integer"
+      },
+      "confirmed_aliases_count": {
+        "default": 0,
+        "description": "Count of confirmed aliases applied",
+        "title": "Confirmed Aliases Count",
+        "type": "integer"
+      },
+      "entities_by_category": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "description": "Canonical entity counts by category",
+        "title": "Entities By Category",
+        "type": "object"
+      },
+      "statements_by_category": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "description": "Statement counts by category",
+        "title": "Statements By Category",
+        "type": "object"
+      },
+      "relationships_by_type": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "description": "Relationship counts by relation type",
+        "title": "Relationships By Type",
+        "type": "object"
+      },
+      "quarantine_reasons_breakdown": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "description": "Breakdown of quarantine reasons",
+        "title": "Quarantine Reasons Breakdown",
+        "type": "object"
+      },
+      "referential_integrity_pass_rate": {
+        "default": 1.0,
+        "description": "Fraction of valid relationships",
+        "title": "Referential Integrity Pass Rate",
+        "type": "number"
+      },
+      "provenance_completeness_rate": {
+        "default": 1.0,
+        "description": "Fraction of records with full provenance",
+        "title": "Provenance Completeness Rate",
+        "type": "number"
+      }
+    },
+    "title": "KnowledgeBaseManifest",
+    "type": "object"
+  }
+}
