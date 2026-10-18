@@ -17,6 +17,7 @@ from pipelines.extraction.config import ExtractionConfig, config
 from pipelines.extraction.evaluator import ExtractionEvaluationReport, ExtractionEvaluator
 from pipelines.extraction.extractor import (
     BaseScientificExtractor,
+    ExperimentalScientificExtractor,
     LLMScientificExtractor,
     RuleBasedScientificExtractor,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "config",
     "BaseScientificExtractor",
     "RuleBasedScientificExtractor",
+    "ExperimentalScientificExtractor",
     "LLMScientificExtractor",
     "ScientificNormalizer",
     "EvidenceGroundingValidator",

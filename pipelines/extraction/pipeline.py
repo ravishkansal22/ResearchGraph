@@ -45,10 +45,19 @@ class ScientificExtractionPipeline:
         extractor: Optional[BaseScientificExtractor] = None,
     ):
         self.config = config or default_config
-        self.extractor = extractor or RuleBasedScientificExtractor(
-            schema_version=self.config.EXTRACTION_SCHEMA_VERSION,
-            pipeline_version=self.config.EXTRACTION_PIPELINE_VERSION,
-        )
+        if extractor is not None:
+            self.extractor = extractor
+        elif self.config.EXTRACTION_PIPELINE_VERSION == "v0.4.1":
+            from pipelines.extraction.extractor_v041 import ExperimentalScientificExtractor
+            self.extractor = ExperimentalScientificExtractor(
+                schema_version=self.config.EXTRACTION_SCHEMA_VERSION,
+                pipeline_version=self.config.EXTRACTION_PIPELINE_VERSION,
+            )
+        else:
+            self.extractor = RuleBasedScientificExtractor(
+                schema_version=self.config.EXTRACTION_SCHEMA_VERSION,
+                pipeline_version=self.config.EXTRACTION_PIPELINE_VERSION,
+            )
         self.validator = EvidenceGroundingValidator(
             min_evidence_chars=self.config.MIN_EVIDENCE_CHARS,
             strict_offset_matching=self.config.REQUIRE_EXACT_SPANS,

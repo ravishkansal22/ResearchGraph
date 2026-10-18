@@ -51,9 +51,31 @@ Reviewers evaluate machine-extracted scientific entities, statements, and relati
 
 ---
 
-## 4. Verdict Options
+## 4. Verdict Options & Evaluation Protocol
+
 For each system prediction, assign one of:
-1. `CORRECT`: Both the category and the exact evidence span are accurate and fully supported by text.
-2. `PARTIALLY_CORRECT`: Category is correct but the span is imprecise (e.g., clipped words or over-extended span), or concept is valid but miscategorized.
-3. `UNSUPPORTED`: Hallucinated, factually inverted, or not backed by the quoted text.
-4. `MISSING`: A vital scientific concept or statement in the chunk that the system completely failed to extract.
+1. `CORRECT`: Both the category and the exact evidence span are accurate and fully supported by text. When marked `CORRECT`, the reviewer may leave the ground-truth category and evidence columns blank to inherit the validated system values, or re-type them for affirmation.
+2. `PARTIALLY_CORRECT`: The underlying concept or finding is valid, but either the category is imprecise (e.g. `TASK` miscategorized as `METHOD`) or the character span is clipped or over-extended. Specify the corrected category and exact evidence span in the human fields.
+3. `UNSUPPORTED`: Hallucinated, factually inverted, contextually inapplicable, or not backed by the quoted text. These represent system false positives.
+4. `MISSING`: A vital scientific entity, statement, or relationship present in the chunk that the system failed to extract.
+
+---
+
+## 5. Review Workflow for 25-Chunk Audit Packet
+
+### A. Chunks with Predictions (Chunks 01–15)
+- **Part A (Assess Existing Predictions)**: Review every machine-extracted candidate record. Assign verdict `CORRECT`, `PARTIALLY_CORRECT`, or `UNSUPPORTED`.
+- **Part B (Discover Missed Knowledge)**: Scan the chunk text for any missed entities, contribution claims, empirical results, limitations, datasets, or relationships. Record them in the provided candidate rows with verdict `MISSING`, verbatim evidence span, and attribution.
+
+### B. Chunks without Predictions (Chunks 16–25)
+- Perform a thorough recall audit of the chunk text.
+- If valid scientific concepts, methods (e.g. bibliometric analysis, VOSviewer), limitations, datasets, or claims are present, record them in the structured discovery rows with verdict `MISSING`.
+- If the chunk is genuinely devoid of scientific content (e.g. front matter, author preface, table fragments), leave human fields blank or add a clarifying comment.
+
+---
+
+## 6. Audit Trail and Data Integrity
+- Keep all human ground-truth columns initially blank until reviewed by a qualified human annotator.
+- Do not auto-fill, simulate, or synthesize ground-truth labels in production benchmark files.
+- The evaluation engine ingests completed annotations and calculates strict and relaxed precision, recall, F1, category-wise metrics, evidence-span correctness, relation metrics, and detailed false positive/negative listings.
+

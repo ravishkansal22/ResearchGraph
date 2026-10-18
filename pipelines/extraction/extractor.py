@@ -590,3 +590,8 @@ class LLMScientificExtractor(BaseScientificExtractor):
         except Exception as e:
             logger.warning(f"LLM extraction failed ({e}), falling back to rule-based baseline.")
             return self.fallback.extract(chunk)
+
+
+# Re-export ExperimentalScientificExtractor (v0.4.1) for convenience
+from pipelines.extraction.extractor_v041 import ExperimentalScientificExtractor
+

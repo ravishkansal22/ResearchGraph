@@ -10,13 +10,20 @@
 ## Reviewer Instructions & Ground-Truth Protocol
 
 1. **Do not prefill human fields** using system predictions. All human ground-truth fields must be independently assessed.
-2. **For Chunks with Predictions (1–15)**: Verify whether each system-predicted entity, statement, or relation is `CORRECT`, `PARTIALLY_CORRECT`, or `UNSUPPORTED`.
-3. **For Chunks without Predictions (16–25)**: Read the chunk text carefully. Identify if valid scientific entities, contributions, methods, or limitations are present (`MISSING` extractions) or if the chunk is genuinely devoid of scientific assertions.
+2. **For Chunks with Predictions (1–15)**:
+   - **Part A (Assess Existing Predictions)**: For every machine extraction, assign `CORRECT`, `PARTIALLY_CORRECT`, or `UNSUPPORTED`.
+     - If `CORRECT`: System category and evidence span are accurate verbatim extractions.
+     - If `PARTIALLY_CORRECT`: Specify corrected category or exact evidence span in human fields.
+     - If `UNSUPPORTED`: Extraction is hallucinated, misinterpreted, or unsupported by chunk text.
+   - **Part B (Discover Missed Knowledge)**: Use the provided blank rows to record any missed scientific entities, statements, or relations with verdict `MISSING`.
+3. **For Chunks without Predictions (16–25)**:
+   - Read the chunk text carefully. Record any valid scientific entities, contributions, methods, or limitations in the provided rows (`MISSING`). If chunk has no scientific assertions (e.g. front matter, header), leave blank or note in comments.
 4. **Allowed Categories**:
    - Entities: `METHOD`, `PROBLEM`, `BOTTLENECK`, `METRIC`, `DATASET`, `TASK`, `ASSUMPTION`, `DOMAIN`
    - Statements: `CLAIM`, `RESULT`, `LIMITATION`, `FUTURE_DIRECTION`, `FAILURE_MODE`
    - Relations: `ADDRESSES`, `USES`, `IMPROVES`, `OUTPERFORMS`, `LIMITED_BY`, `EVALUATED_ON`, `ASSUMES`, `REPORTS`, `SUGGESTS`
-5. **Attribution**: Distinguish `AUTHOR_STATED` (explicitly declared in text) from `SYSTEM_INFERRED`.
+5. **Attribution**: Distinguish `AUTHOR_STATED` (explicitly declared in primary text) from `SYSTEM_INFERRED`.
+6. **Exact Evidence Grounding**: The evidence span must be a verbatim exact substring from the source chunk.
 
 ---
 
@@ -36,25 +43,25 @@ Method – The research employs deep learning techniques and machine learning al
 Results – Initial testing of the AI robot demonstrates promising results in its ability to accurately recognize and respond to various emotional cues and mental health states exhibited by users. The deep learning algorithm enables the robot to adapt and personalize its interactions based on individual preferences and needs, enhancing its effectiveness as a mental health support tool.
 ```
 
-#### System Predictions (10 records extracted):
+#### Part A: System Predictions Assessment (10 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `DOMAIN` | mental health | *"mental health"* |
-| `ENTITY` | `DOMAIN` | mental health | *"mental health"* |
-| `ENTITY` | `DOMAIN` | mental health | *"mental health"* |
-| `ENTITY` | `DOMAIN` | mental health | *"mental health"* |
-| `ENTITY` | `DOMAIN` | mental health | *"mental health"* |
-| `STATEMENT` | `CLAIM` | Purpose – This study explores the feasibility and effectiveness of utilizing a deep learning algorithm integrated into an AI robot to provide mental health support. | *"Purpose – This study explores the feasibility and effectiveness of utilizing a deep learning algorithm integrated into an AI robot to provide mental health support."* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 3 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 4 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 5 | `ENTITY` | `DOMAIN` | mental health | *"mental health"* | | | | AUTHOR_STATED | |
+| 6 | `ENTITY` | `DOMAIN` | mental health | *"mental health"* | | | | AUTHOR_STATED | |
+| 7 | `ENTITY` | `DOMAIN` | mental health | *"mental health"* | | | | AUTHOR_STATED | |
+| 8 | `ENTITY` | `DOMAIN` | mental health | *"mental health"* | | | | AUTHOR_STATED | |
+| 9 | `ENTITY` | `DOMAIN` | mental health | *"mental health"* | | | | AUTHOR_STATED | |
+| 10 | `STATEMENT` | `CLAIM` | Purpose – This study explores the feasibility and effectiveness of utilizing a deep learning algorithm integrated into an AI robot to provide mental health support. | *"Purpose – This study explores the feasibility and effectiveness of utilizing a deep learning algorithm integrated into an AI robot to provide mental health support."* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -73,17 +80,17 @@ Results – Initial testing of the AI robot demonstrates promising results in it
 Thanks to the rapid growth of Artificial Intelligence, Machine Learning, and Deep Learning, the operational and strategic principles of present-day organizations have been altered. The growing complexity of business settings, the explosion of data, the necessity of high competition in the market and pressure to enhance Managerial Productivity and Efficiency has compelled organizations to find ways to be smart and scalable [1,2]. The conventional way of managing business is usually relying on manual decision making, splintered work streams, and lengthy administrative processes that restrict responsiveness and Organizational Agility. Conversely, Intelligent Automation, Business Process Automation, Predictive Analytics, and Decision Support Systems have since become indispensable resource in enhancing efficiency in operations and effectiveness in management. Nowadays, Artificial Intelligence is actively employed to perform repetitive tasks automatically to support Strategic Planning, enhance Resource Allocation, augment Knowledge Management, and employee Productivity. Recent breakthroughs in Generative AI, Large Language Models, Conversational AI, and Virtual Assistants are continuing to further enhance Digital Transformation because they allow managers to
 ```
 
-#### System Predictions (2 records extracted):
+#### Part A: System Predictions Assessment (2 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* |
-| `ENTITY` | `METHOD` | Deep Learning | *"Deep Learning"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | Deep Learning | *"Deep Learning"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -104,20 +111,20 @@ The contributions of this research work:
 1) A review provides a systematic analysis of AI, ML and DL integration into industrial applications from existing studies to extract trends, gaps, and future research directions. 2) Co-occurrence analysis based around commonly used keywords in the literature (core themes and concepts), to explain their relationships. 3) A comprehensive cluster analysis that classifies the research domains into these clusters helps in understanding the key areas where AI, ML, and DL are applied in smart and sustainable industries as well as in the emerging trends in them.
 ```
 
-#### System Predictions (1 records extracted):
+#### Part A: System Predictions Assessment (1 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `STATEMENT` | `FUTURE_DIRECTION` | The contributions of this research work:
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `STATEMENT` | `FUTURE_DIRECTION` | The contributions of this research work:
 
 1) A review provides a systematic analysis of AI, ML and DL integration into industrial applications from existing studies to extract trends, gaps, and future research directions. | *"The contributions of this research work:
 
-1) A review provides a systematic analysis of AI, ML and DL integration into industrial applications from existing studies to extract trends, gaps, and future research directions."* |
+1) A review provides a systematic analysis of AI, ML and DL integration into industrial applications from existing studies to extract trends, gaps, and future research directions."* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -136,17 +143,17 @@ The contributions of this research work:
 Many obstacles still exist in these fields, notwithstanding advancements (Hasan et al., 2022; Cao et al., 2021; Mian, 2022). For example, integrating AI, ML, and DL models across quantum, edge, and cloud infrastructures calls for strong frameworks that take security, scalability, and interoperability into account. Furthermore, managing massive, diverse data streams in real-time is still a difficult undertaking, particularly when combined with the advanced machine learning models' high resource and energy requirements (Hasan et al., 2022; Cao et al., 2021). Moreover, standardizing processes that enable a smooth transition between cloud and edge environments is becoming more and more necessary, especially in light of the development of quantum computing architectures. We examine the present trends, obstacles, and potential paths in the convergence of cloud, edge, and quantum computing with AI, ML, and DL in this review. The objectives of this work are to present a thorough assessment of the current state of the art, draw attention to the gaps in the literature, and recommend fresh lines of inquiry. By means of a review of the literature, co-occurrence, cluster, and keyword analysis, we provide an understanding of the main areas of inquiry and future directions for this multidisciplinary field.
 ```
 
-#### System Predictions (2 records extracted):
+#### Part A: System Predictions Assessment (2 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
-| `STATEMENT` | `FUTURE_DIRECTION` | By means of a review of the literature, co-occurrence, cluster, and keyword analysis, we provide an understanding of the main areas of inquiry and future directions for this multidisciplinary field. | *"By means of a review of the literature, co-occurrence, cluster, and keyword analysis, we provide an understanding of the main areas of inquiry and future directions for this multidisciplinary field."* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `STATEMENT` | `FUTURE_DIRECTION` | By means of a review of the literature, co-occurrence, cluster, and keyword analysis, we provide an understanding of the main areas of inquiry and future directions for this multidisciplinary field. | *"By means of a review of the literature, co-occurrence, cluster, and keyword analysis, we provide an understanding of the main areas of inquiry and future directions for this multidisciplinary field."* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -165,17 +172,17 @@ Many obstacles still exist in these fields, notwithstanding advancements (Hasan 
 Sustainable development goals (SDGs) should be everyone's business, with world leaders coming together to work on united goals to alleviate the global community from poverty, inequality, climate change, environmental degradation, peace, and justice - both for those of us alive today and for the generations to come (Mhlanga, 2022; Goralski, & Tan, 2020; Singh et al., 2024). While the world continues to struggle with various challenges, the incorporation of cutting-edge technologies, particularly artificial intelligence (AI), machine learning (ML), and deep learning (DL), has unfolded as a revolutionary phenomenon (Leal Filho et al., 2023; Mercier-Laurent, 2021; Rane et al., 2024a). These technologies provide novel competencies for data processing, predictive analytics, and automated decision-making, which can greatly amplify the pursuit of the SDGs. Despite its divisiveness, the term AI is broadly used to describe any machine capable of simulating intelligent human behaviour such as problem solving, learning and adaptation.
 ```
 
-#### System Predictions (2 records extracted):
+#### Part A: System Predictions Assessment (2 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -194,16 +201,16 @@ Sustainable development goals (SDGs) should be everyone's business, with world l
 One of the most useful applications of AI techniques in applied superconductivity is for intelligent modelling of superconductors and superconducting systems. There are a few main modelling techniques currently used and well-demonstrated within superconductivity community, including analytical, equivalent circuit-based models, and FE techniques. These models all have their advantages and disadvantages. Some of these methods are computationally expensive and are not applicable in real time. However, AI techniques offer same high accuracy with much faster computation speed, and in most cases, much lower computational burden. In addition, in some problems, because of the complexity of geometry, unknown materials, real-time application, the AI techniques are the only viable solution.
 ```
 
-#### System Predictions (1 records extracted):
+#### Part A: System Predictions Assessment (1 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METRIC` | accuracy | *"accuracy"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METRIC` | accuracy | *"accuracy"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -222,16 +229,16 @@ One of the most useful applications of AI techniques in applied superconductivit
 This study employs a detailed methodology that includes a comprehensive literature review, keyword analysis, co-occurrence analysis, and cluster analysis. The foundation of this research is a thorough literature review, which aims to collate and synthesize existing knowledge, theories, and empirical findings related to AI and ML applications in logistics and supply chain management (SCM). Academic databases such as Scopus, Web of Science, and Google Scholar were systematically searched for peer-reviewed articles, conference papers, and review articles published in the last ten years. The inclusion criteria were studies that specifically addressed the use of AI and ML to enhance resilience and sustainability in SCM. The selected literature was analyzed to extract key themes, methodologies, results, and identify gaps in the current research landscape. To understand the scope and focus of the research area, a detailed keyword analysis was conducted. This involved identifying and cataloging the most frequently occurring keywords in the selected literature. Keywords such as "artificial intelligence," "machine learning," "resilience," "sustainability," "logistics," and "supply chain management" were used to pinpoint central concepts and emerging trends. This analysis helped narrow the research scope and provided insight into the terminological landscape and focus areas of recent studies.
 ```
 
-#### System Predictions (1 records extracted):
+#### Part A: System Predictions Assessment (1 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -292,17 +299,17 @@ Machine learning
 [38], [39], [40]
 ```
 
-#### System Predictions (2 records extracted):
+#### Part A: System Predictions Assessment (2 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | Machine learning | *"Machine learning"* |
-| `ENTITY` | `METRIC` | accuracy | *"accuracy"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | Machine learning | *"Machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METRIC` | accuracy | *"accuracy"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -321,28 +328,28 @@ Machine learning
 On the left side of the main AI cluster exists a separate green cluster dedicated to the values of "Industry 4.0" and "Industry 5.0". This group is focusing on AI and ML help in shaping the future of industrial automation, smart manufacturing and cyber physical systems. Words of the technology "network security", "blockchain ", "virtual reality", "cloud computing" and "5G mobile communication system", represent the complicated network of technology support to both Industry 4.0 and 5.0. The value all these sectors get from operating with more artificial intelligence dictating the operational efficiency, stronger security measures and a culture of being creative. Emphasis on engineering education, industrial research, and life cycle rankings highlights a commitment to education and research as key educational and research components, reflecting the importance of life-long learning and industrial technology advancement. The blue circle represents "deep learning" and its "learning systems. The historical importance of deep learning algorithms, in neural networks, convolutional neural networks (CNNs) and long short-term memory (LSTM) networks, has even been documented in a compilation. The terminology for the same learning algorithms, reinforcement learning, neural networks, support vector machine (SVM), and classification of data are often used in various ways highlighting the leading approaches and methodologies underpinning DL. Words like 'object detection', 'feature extraction' and 'forecasting' emphasise the pragmatic applications of DL in areas such as the integration of computer vision, natural language processing and predictive analytics. This sector is helps in the progress of education systems and its influence on multiple sectors.
 ```
 
-#### System Predictions (13 records extracted):
+#### Part A: System Predictions Assessment (13 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | CNNs | *"CNNs"* |
-| `ENTITY` | `METHOD` | neural networks | *"neural networks"* |
-| `ENTITY` | `METHOD` | neural networks | *"neural networks"* |
-| `ENTITY` | `METHOD` | neural networks | *"neural networks"* |
-| `ENTITY` | `METHOD` | reinforcement learning | *"reinforcement learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | support vector machine | *"support vector machine"* |
-| `ENTITY` | `METHOD` | long short-term memory | *"long short-term memory"* |
-| `ENTITY` | `METHOD` | LSTM | *"LSTM"* |
-| `ENTITY` | `METHOD` | SVM | *"SVM"* |
-| `ENTITY` | `METHOD` | convolutional neural networks | *"convolutional neural networks"* |
-| `ENTITY` | `TASK` | feature extraction | *"feature extraction"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | CNNs | *"CNNs"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | neural networks | *"neural networks"* | | | | AUTHOR_STATED | |
+| 3 | `ENTITY` | `METHOD` | neural networks | *"neural networks"* | | | | AUTHOR_STATED | |
+| 4 | `ENTITY` | `METHOD` | neural networks | *"neural networks"* | | | | AUTHOR_STATED | |
+| 5 | `ENTITY` | `METHOD` | reinforcement learning | *"reinforcement learning"* | | | | AUTHOR_STATED | |
+| 6 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 7 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 8 | `ENTITY` | `METHOD` | support vector machine | *"support vector machine"* | | | | AUTHOR_STATED | |
+| 9 | `ENTITY` | `METHOD` | long short-term memory | *"long short-term memory"* | | | | AUTHOR_STATED | |
+| 10 | `ENTITY` | `METHOD` | LSTM | *"LSTM"* | | | | AUTHOR_STATED | |
+| 11 | `ENTITY` | `METHOD` | SVM | *"SVM"* | | | | AUTHOR_STATED | |
+| 12 | `ENTITY` | `METHOD` | convolutional neural networks | *"convolutional neural networks"* | | | | AUTHOR_STATED | |
+| 13 | `ENTITY` | `TASK` | feature extraction | *"feature extraction"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -361,17 +368,17 @@ On the left side of the main AI cluster exists a separate green cluster dedicate
 Artificial intelligence (AI), machine learning (ML), and deep learning (DL) in the field of oncology have become the new way of approaching cancer diagnosis, cancer treatment, and cancer control. These technologies provide a virtually unlimited measure of potential to process large volumes of information during the diagnosis and create effective treatment programs based on medical images and genomic profiles, the results of the treatments, etc., allowing oncologists to be more comprehensive as to the options and the approach chosen based on the patient’s features. Clinicians now use artificial intelligence techniques to forecast the diseases’ development, choose therapy strategies, and fine-tune the therapeutic procedures better than before.
 ```
 
-#### System Predictions (2 records extracted):
+#### Part A: System Predictions Assessment (2 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -418,18 +425,18 @@ defensible workflow defines the decision context and failure costs, operationali
 constructs into measurable variables, documents assumptions, and selects analytic
 ```
 
-#### System Predictions (3 records extracted):
+#### Part A: System Predictions Assessment (3 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | machine learning | *"machine learning"* |
-| `ENTITY` | `METHOD` | Deep learning | *"Deep learning"* |
-| `ENTITY` | `METRIC` | accuracy | *"accuracy"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | machine learning | *"machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | Deep learning | *"Deep learning"* | | | | AUTHOR_STATED | |
+| 3 | `ENTITY` | `METRIC` | accuracy | *"accuracy"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -450,16 +457,16 @@ The potential impact of computing sciences on medicine was already being anticip
 The rapid advancements in AI hence raise the question of not whether AI will shape our surgical future, but rather how it will do so.
 ```
 
-#### System Predictions (1 records extracted):
+#### Part A: System Predictions Assessment (1 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `DOMAIN` | healthcare | *"healthcare"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `DOMAIN` | healthcare | *"healthcare"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -478,21 +485,21 @@ The rapid advancements in AI hence raise the question of not whether AI will sha
 As contextualized in previous chapters, Machine learning (ML), a subset of Artificial Intelligence (AI), refers to statistical techniques that learn the representation, patterns, and relationships in the data. Artificial intelligence (AI) automata or mechanisms that frame rational behavior are based on a hard-and-software system attempting to exact particular types of rational behavior. "Deep learning" is a noteworthy field of computer science that studies architectures, algorithms, models, and frameworks with multiple levels of processing. The convergence between AI, deep learning, and ML is evident with the emerging new players that are activating Automation, Robotics, and AI by incorporating deep learning, AI, and ML systems. The convergence can improve productivity, efficiency, accuracy, and cost. The discussion is based on the most recent applications of deep learning in accounting, auditing, assurance, tax, and consulting.
 ```
 
-#### System Predictions (6 records extracted):
+#### Part A: System Predictions Assessment (6 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | Machine learning | *"Machine learning"* |
-| `ENTITY` | `METHOD` | Deep learning | *"Deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METHOD` | deep learning | *"deep learning"* |
-| `ENTITY` | `METRIC` | accuracy | *"accuracy"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | Machine learning | *"Machine learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | Deep learning | *"Deep learning"* | | | | AUTHOR_STATED | |
+| 3 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 4 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 5 | `ENTITY` | `METHOD` | deep learning | *"deep learning"* | | | | AUTHOR_STATED | |
+| 6 | `ENTITY` | `METRIC` | accuracy | *"accuracy"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -511,16 +518,16 @@ As contextualized in previous chapters, Machine learning (ML), a subset of Artif
 Healthcare administration needs AI due to following reasons (Ogunsakin et al., 2024).
 ```
 
-#### System Predictions (1 records extracted):
+#### Part A: System Predictions Assessment (1 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `DOMAIN` | Healthcare | *"Healthcare"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `DOMAIN` | Healthcare | *"Healthcare"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -539,37 +546,37 @@ Healthcare administration needs AI due to following reasons (Ogunsakin et al., 2
 Sr. No. Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance
 ```
 
-#### System Predictions (22 records extracted):
+#### Part A: System Predictions Assessment (22 records to assess)
 
-| Type | Category | Extracted Surface Text | Exact Evidence Span |
-| :--- | :--- | :--- | :--- |
-| `ENTITY` | `METHOD` | Ensemble learning | *"Ensemble learning"* |
-| `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* |
-| `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* |
-| `ENTITY` | `METHOD` | Federated Learning | *"Federated Learning"* |
-| `ENTITY` | `PROBLEM` | Data Imbalance | *"Data Imbalance"* |
-| `ENTITY` | `PROBLEM` | anomaly detection | *"anomaly detection"* |
-| `ENTITY` | `BOTTLENECK` | Computational Cost | *"Computational Cost"* |
-| `ENTITY` | `DOMAIN` | Cybersecurity | *"Cybersecurity"* |
-| `ENTITY` | `DOMAIN` | cybersecurity | *"cybersecurity"* |
-| `STATEMENT` | `FUTURE_DIRECTION` | Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Ensemble learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Ensemble learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Machine Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Machine Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Machine Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Machine Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Federated Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `ADDRESSES` | Federated Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `LIMITED_BY` | Ensemble learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `LIMITED_BY` | Machine Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `LIMITED_BY` | Machine Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
-| `RELATION` | `LIMITED_BY` | Federated Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* |
+| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ENTITY` | `METHOD` | Ensemble learning | *"Ensemble learning"* | | | | AUTHOR_STATED | |
+| 2 | `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* | | | | AUTHOR_STATED | |
+| 3 | `ENTITY` | `METHOD` | Machine Learning | *"Machine Learning"* | | | | AUTHOR_STATED | |
+| 4 | `ENTITY` | `METHOD` | Federated Learning | *"Federated Learning"* | | | | AUTHOR_STATED | |
+| 5 | `ENTITY` | `PROBLEM` | Data Imbalance | *"Data Imbalance"* | | | | AUTHOR_STATED | |
+| 6 | `ENTITY` | `PROBLEM` | anomaly detection | *"anomaly detection"* | | | | AUTHOR_STATED | |
+| 7 | `ENTITY` | `BOTTLENECK` | Computational Cost | *"Computational Cost"* | | | | AUTHOR_STATED | |
+| 8 | `ENTITY` | `DOMAIN` | Cybersecurity | *"Cybersecurity"* | | | | AUTHOR_STATED | |
+| 9 | `ENTITY` | `DOMAIN` | cybersecurity | *"cybersecurity"* | | | | AUTHOR_STATED | |
+| 10 | `STATEMENT` | `FUTURE_DIRECTION` | Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 11 | `RELATION` | `ADDRESSES` | Ensemble learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 12 | `RELATION` | `ADDRESSES` | Ensemble learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 13 | `RELATION` | `ADDRESSES` | Machine Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 14 | `RELATION` | `ADDRESSES` | Machine Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 15 | `RELATION` | `ADDRESSES` | Machine Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 16 | `RELATION` | `ADDRESSES` | Machine Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 17 | `RELATION` | `ADDRESSES` | Federated Learning addresses Data Imbalance | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 18 | `RELATION` | `ADDRESSES` | Federated Learning addresses anomaly detection | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 19 | `RELATION` | `LIMITED_BY` | Ensemble learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 20 | `RELATION` | `LIMITED_BY` | Machine Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 21 | `RELATION` | `LIMITED_BY` | Machine Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
+| 22 | `RELATION` | `LIMITED_BY` | Federated Learning limited by Computational Cost | *"Challenge Opportunity Future Direction 1 Adversarial Machine Learning Robust model training Adversarial resilience frameworks 2 Prompt Injection Secure prompt engineering Zero-Trust Runtime Architecture 3 Data Privacy Concerns Federated Learning Privacy-Preserving Machine Learning 4 Lack of Explainability Explainable Artificial Intelligence Human-Centered Cybersecurity 5 Model Hallucination Trustworthy AI Safer Large Language Models 6 Data Imbalance Synthetic data generation Generative Adversarial Networks 7 High Computational Cost Lightweight AI models Edge AI deployment 8 False Positives Behavioral Analytics Hybrid AI models 9 False Negatives Multi-layered detection Ensemble learning 10 Poor Data Quality Data cleaning pipelines Automated data governance 11 Limited Scalability Cloud-native AI systems Distributed cybersecurity frameworks 12 Regulatory Compliance Unified governance platforms Automated compliance systems 13 Identity Theft Adaptive Authentication Continuous identity verification 14 Deepfake Attacks Synthetic media detection Deepfake-resistant systems 15 Malware Evolution Real-time threat monitoring Autonomous malware analysis 16 Phishing Automation Natural Language Processing AI-based phishing prevention 17 IoT Vulnerabilities Lightweight anomaly detection Secure IoT ecosystems 18 Quantum Threats Post-Quantum Cryptography Quantum-Safe Security 19 Multi-Agent Risks Agentic AI governance Safe autonomous systems 20 Runtime Supply Chain Attacks Zero-Trust Runtime Models Secure agent ecosystems 21 Insider Threats Behavioral Analytics Context-aware monitoring 22 Cloud Misconfigurations Cloud Security Automation AI-driven cloud governance 23 Skill Gaps AI-enabled SOC automation Workforce augmentation 24 Tool Fragmentation Platform consolidation Unified security operations 25 Lack of Accountability Human-in-the-Loop AI Ethical AI governance"* | | | | AUTHOR_STATED | |
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
@@ -591,15 +598,17 @@ Contributions of this study:
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -616,15 +625,17 @@ Following the keyword analysis, a co-occurrence analysis was conducted to explor
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -661,15 +672,17 @@ has a weight of 1/10); documents with more than n authors can be ignored, where 
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -686,15 +699,17 @@ However, there are several problems that have been culminating in the integratio
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -771,15 +786,17 @@ learning
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -796,15 +813,17 @@ To evaluate the performance of the image captioning system consisting of creativ
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -821,15 +840,17 @@ Looking forward, it is appropriate to consider the question, what has changed in
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -884,15 +905,17 @@ measurement
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -909,15 +932,17 @@ Investigates AI-driven security challenges
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 
@@ -934,15 +959,17 @@ Preface
 ```
 
 #### System Predictions:
-> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*
+> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*
 
-#### Human Ground-Truth Assessment (Fill in below):
+#### Discovered Scientific Knowledge (Recall Audit)
 
-| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |
-| - | :--- | :--- | :--- | :--- | :--- | :--- |
+| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | | | | AUTHOR_STATED | | |
 | 2 | | | | AUTHOR_STATED | | |
 | 3 | | | | AUTHOR_STATED | | |
+| 4 | | | | AUTHOR_STATED | | |
+| 5 | | | | AUTHOR_STATED | | |
 
 ---
 

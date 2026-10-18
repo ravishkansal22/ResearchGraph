@@ -164,30 +164,33 @@ def main():
             full_text = chunk_texts.get(cid, "")
             preds = extracted_records.get(cid, [])
             has_out = cid in SELECTED_CHUNK_IDS_WITH_OUTPUT
-            goal = "Extraction Precision & Span Grounding" if has_out else "Recall Gap & Missed Knowledge Detection"
+            goal = "Precision & Evidence Grounding Verification" if has_out else "Recall Gap & Missed Knowledge Detection"
 
             if not preds:
-                writer.writerow({
-                    "packet_index": idx,
-                    "chunk_id": cid,
-                    "canonical_id": s_meta["canonical_id"],
-                    "section_title": s_meta["section_title"],
-                    "section_bucket": s_meta["section_bucket"],
-                    "has_system_output": False,
-                    "audit_investigation_goal": goal,
-                    "chunk_text": full_text,
-                    "system_record_type": "NONE",
-                    "system_predicted_category": "NONE",
-                    "system_predicted_surface_text": "NONE",
-                    "system_evidence_span": "NONE",
-                    "human_ground_truth_category": "",
-                    "human_ground_truth_normalized_text": "",
-                    "human_ground_truth_evidence_span": "",
-                    "human_attribution": "",
-                    "human_verdict": "",
-                    "human_reviewer_comments": "",
-                })
+                # Provide 5 structured blank rows for chunks with zero predictions to allow thorough recall annotation
+                for slot in range(1, 6):
+                    writer.writerow({
+                        "packet_index": idx,
+                        "chunk_id": cid,
+                        "canonical_id": s_meta["canonical_id"],
+                        "section_title": s_meta["section_title"],
+                        "section_bucket": s_meta["section_bucket"],
+                        "has_system_output": False,
+                        "audit_investigation_goal": goal,
+                        "chunk_text": full_text,
+                        "system_record_type": "ADD_MISSING",
+                        "system_predicted_category": "",
+                        "system_predicted_surface_text": "",
+                        "system_evidence_span": "",
+                        "human_ground_truth_category": "",
+                        "human_ground_truth_normalized_text": "",
+                        "human_ground_truth_evidence_span": "",
+                        "human_attribution": "",
+                        "human_verdict": "",
+                        "human_reviewer_comments": "",
+                    })
             else:
+                # 1. Existing predictions to assess
                 for p in preds:
                     rec_type = "RELATION" if "relation_type" in p else ("STATEMENT" if "normalized_statement" in p else "ENTITY")
                     cat = p.get("category") or p.get("relation_type", "")
@@ -213,6 +216,28 @@ def main():
                         "human_verdict": "",
                         "human_reviewer_comments": "",
                     })
+                # 2. Add 3 blank candidate rows for adding missed items in chunks with predictions
+                for slot in range(1, 4):
+                    writer.writerow({
+                        "packet_index": idx,
+                        "chunk_id": cid,
+                        "canonical_id": s_meta["canonical_id"],
+                        "section_title": s_meta["section_title"],
+                        "section_bucket": s_meta["section_bucket"],
+                        "has_system_output": True,
+                        "audit_investigation_goal": goal,
+                        "chunk_text": full_text,
+                        "system_record_type": "ADD_MISSING",
+                        "system_predicted_category": "",
+                        "system_predicted_surface_text": "",
+                        "system_evidence_span": "",
+                        "human_ground_truth_category": "",
+                        "human_ground_truth_normalized_text": "",
+                        "human_ground_truth_evidence_span": "",
+                        "human_attribution": "",
+                        "human_verdict": "",
+                        "human_reviewer_comments": "",
+                    })
 
     logger.info(f"Saved audit packet CSV to {csv_path}")
 
@@ -227,13 +252,20 @@ def main():
         f.write("---\n\n")
         f.write("## Reviewer Instructions & Ground-Truth Protocol\n\n")
         f.write("1. **Do not prefill human fields** using system predictions. All human ground-truth fields must be independently assessed.\n")
-        f.write("2. **For Chunks with Predictions (1–15)**: Verify whether each system-predicted entity, statement, or relation is `CORRECT`, `PARTIALLY_CORRECT`, or `UNSUPPORTED`.\n")
-        f.write("3. **For Chunks without Predictions (16–25)**: Read the chunk text carefully. Identify if valid scientific entities, contributions, methods, or limitations are present (`MISSING` extractions) or if the chunk is genuinely devoid of scientific assertions.\n")
+        f.write("2. **For Chunks with Predictions (1–15)**:\n")
+        f.write("   - **Part A (Assess Existing Predictions)**: For every machine extraction, assign `CORRECT`, `PARTIALLY_CORRECT`, or `UNSUPPORTED`.\n")
+        f.write("     - If `CORRECT`: System category and evidence span are accurate verbatim extractions.\n")
+        f.write("     - If `PARTIALLY_CORRECT`: Specify corrected category or exact evidence span in human fields.\n")
+        f.write("     - If `UNSUPPORTED`: Extraction is hallucinated, misinterpreted, or unsupported by chunk text.\n")
+        f.write("   - **Part B (Discover Missed Knowledge)**: Use the provided blank rows to record any missed scientific entities, statements, or relations with verdict `MISSING`.\n")
+        f.write("3. **For Chunks without Predictions (16–25)**:\n")
+        f.write("   - Read the chunk text carefully. Record any valid scientific entities, contributions, methods, or limitations in the provided rows (`MISSING`). If chunk has no scientific assertions (e.g. front matter, header), leave blank or note in comments.\n")
         f.write("4. **Allowed Categories**:\n")
         f.write("   - Entities: `METHOD`, `PROBLEM`, `BOTTLENECK`, `METRIC`, `DATASET`, `TASK`, `ASSUMPTION`, `DOMAIN`\n")
         f.write("   - Statements: `CLAIM`, `RESULT`, `LIMITATION`, `FUTURE_DIRECTION`, `FAILURE_MODE`\n")
         f.write("   - Relations: `ADDRESSES`, `USES`, `IMPROVES`, `OUTPERFORMS`, `LIMITED_BY`, `EVALUATED_ON`, `ASSUMES`, `REPORTS`, `SUGGESTS`\n")
-        f.write("5. **Attribution**: Distinguish `AUTHOR_STATED` (explicitly declared in text) from `SYSTEM_INFERRED`.\n\n")
+        f.write("5. **Attribution**: Distinguish `AUTHOR_STATED` (explicitly declared in primary text) from `SYSTEM_INFERRED`.\n")
+        f.write("6. **Exact Evidence Grounding**: The evidence span must be a verbatim exact substring from the source chunk.\n\n")
         f.write("---\n\n")
 
         for idx, cid in enumerate(ALL_SELECTED_IDS, 1):
@@ -254,27 +286,33 @@ def main():
             f.write("```\n\n")
 
             if preds:
-                f.write(f"#### System Predictions ({len(preds)} records extracted):\n\n")
-                f.write("| Type | Category | Extracted Surface Text | Exact Evidence Span |\n")
-                f.write("| :--- | :--- | :--- | :--- |\n")
-                for p in preds:
+                f.write(f"#### Part A: System Predictions Assessment ({len(preds)} records to assess)\n\n")
+                f.write("| Pred # | Type | System Category | Extracted Surface Text | Predicted Evidence Span | Human Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED) | Human Category (if corrected) | Human Evidence (if corrected) | Attribution | Reviewer Notes |\n")
+                f.write("| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                for p_idx, p in enumerate(preds, 1):
                     rec_type = "RELATION" if "relation_type" in p else ("STATEMENT" if "normalized_statement" in p else "ENTITY")
                     cat = p.get("category") or p.get("relation_type", "")
                     surf = p.get("surface_text", "")
                     ev = p.get("evidence", {}).get("text", "")
-                    f.write(f"| `{rec_type}` | `{cat}` | {surf} | *\"{ev}\"* |\n")
+                    f.write(f"| {p_idx} | `{rec_type}` | `{cat}` | {surf} | *\"{ev}\"* | | | | AUTHOR_STATED | |\n")
                 f.write("\n")
+
+                f.write("#### Part B: Discovered / Missing Scientific Knowledge (Recall Audit)\n\n")
+                f.write("| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |\n")
+                f.write("| :---: | :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                for slot in range(1, 4):
+                    f.write(f"| {slot} | | | | AUTHOR_STATED | | |\n")
+                f.write("\n---\n\n")
             else:
                 f.write("#### System Predictions:\n")
-                f.write("> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review text for missed scientific entities, methods, claims, or limitations.*\n\n")
+                f.write("> **[NO SYSTEM EXTRACTIONS PRODUCED]** — *Review chunk text for missed scientific entities, methods, claims, or limitations.*\n\n")
 
-            f.write("#### Human Ground-Truth Assessment (Fill in below):\n\n")
-            f.write("| # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (CORRECT / PARTIALLY_CORRECT / UNSUPPORTED / MISSING) | Reviewer Notes |\n")
-            f.write("| - | :--- | :--- | :--- | :--- | :--- | :--- |\n")
-            f.write("| 1 | | | | AUTHOR_STATED | | |\n")
-            f.write("| 2 | | | | AUTHOR_STATED | | |\n")
-            f.write("| 3 | | | | AUTHOR_STATED | | |\n\n")
-            f.write("---\n\n")
+                f.write("#### Discovered Scientific Knowledge (Recall Audit)\n\n")
+                f.write("| Item # | Ground-Truth Category | Normalized Concept / Statement | Exact Supporting Evidence Span | Attribution | Verdict (MISSING) | Reviewer Notes |\n")
+                f.write("| :---: | :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                for slot in range(1, 6):
+                    f.write(f"| {slot} | | | | AUTHOR_STATED | | |\n")
+                f.write("\n---\n\n")
 
     logger.info(f"Saved review sheet markdown to {md_path}")
 

@@ -208,3 +208,104 @@ def test_evaluator_relationship_metrics(evaluator):
     assert rel_metrics["precision"] == 1.0
     assert rel_metrics["recall"] == 1.0
     assert rel_metrics["f1_score"] == 1.0
+
+
+def test_evaluator_unreviewed_annotations_pending(evaluator, tmp_path):
+    """Verify unpopulated human review CSV returns PENDING_HUMAN_ANNOTATION."""
+    csv_file = tmp_path / "blank_review.csv"
+    csv_file.write_text(
+        "packet_index,chunk_id,canonical_id,section_title,section_bucket,has_system_output,audit_investigation_goal,chunk_text,system_record_type,system_predicted_category,system_predicted_surface_text,system_evidence_span,human_ground_truth_category,human_ground_truth_normalized_text,human_ground_truth_evidence_span,human_attribution,human_verdict,human_reviewer_comments\n"
+        "1,chk_01,paper_1,Abstract,ABSTRACT,True,Goal,Text,ENTITY,METHOD,LSTM,LSTM,,,,,\n"
+        "2,chk_02,paper_2,Methods,METHODS,False,Goal,Text,ADD_MISSING,,,,,,\n",
+        encoding="utf-8",
+    )
+
+    gt_records, verdict_counts = evaluator.parse_human_annotations_csv(csv_file)
+    assert len(gt_records) == 0
+    assert verdict_counts["UNREVIEWED"] == 2
+
+    # Evaluator report remains PENDING_HUMAN_ANNOTATION
+    report = evaluator.evaluate_batch(
+        chunks_count=2,
+        entities=[],
+        statements=[],
+        relations=[],
+        rejected_records=[],
+        duration_ms=5.0,
+        ground_truth=gt_records,
+    )
+    assert report.ground_truth_status == "PENDING_HUMAN_ANNOTATION"
+    assert report.scientific_precision is None
+    assert report.scientific_recall is None
+
+
+def test_evaluator_parse_synthetic_human_annotations(evaluator, tmp_path):
+    """Verify synthetic completed human annotations produce verified metrics and error categorization."""
+    csv_file = tmp_path / "synthetic_reviewed_audit_packet.csv"
+    # Create synthetic completed review packet
+    # Row 1: Prediction CORRECT (METHOD: LSTM)
+    # Row 2: Prediction UNSUPPORTED (METRIC: latency) -> counts as FP
+    # Row 3: Missed extraction added by reviewer (DATASET: NSL-KDD) -> counts as FN
+    csv_file.write_text(
+        "packet_index,chunk_id,canonical_id,section_title,section_bucket,has_system_output,audit_investigation_goal,chunk_text,system_record_type,system_predicted_category,system_predicted_surface_text,system_evidence_span,human_ground_truth_category,human_ground_truth_normalized_text,human_ground_truth_evidence_span,human_attribution,human_verdict,human_reviewer_comments\n"
+        "1,chk_01,paper_1,Abstract,ABSTRACT,True,Goal,Text,ENTITY,METHOD,LSTM,LSTM,,,,,CORRECT,Verified\n"
+        "1,chk_01,paper_1,Abstract,ABSTRACT,True,Goal,Text,ENTITY,METRIC,latency,latency,,,,,UNSUPPORTED,Not a metric\n"
+        "1,chk_01,paper_1,Abstract,ABSTRACT,True,Goal,Text,ADD_MISSING,,,,DATASET,NSL-KDD,NSL-KDD,AUTHOR_STATED,MISSING,Missed dataset\n",
+        encoding="utf-8",
+    )
+
+    gt_records, verdict_counts = evaluator.parse_human_annotations_csv(csv_file)
+    assert len(gt_records) == 2  # 1 from CORRECT, 1 from MISSING
+    assert verdict_counts["CORRECT"] == 1
+    assert verdict_counts["UNSUPPORTED"] == 1
+    assert verdict_counts["MISSING"] == 1
+
+    # Now evaluate predictions against parsed ground truth
+    pred_entities = [
+        ScientificEntityRecord(
+            record_id="ent_01",
+            category=ScientificEntityType.METHOD,
+            surface_text="LSTM",
+            normalized_name="lstm",
+            evidence=EvidenceSpan(text="LSTM", start_char=0, end_char=4),
+            provenance=ExtractionProvenance(canonical_id="paper_1", chunk_id="chk_01"),
+        ),
+        ScientificEntityRecord(
+            record_id="ent_02",
+            category=ScientificEntityType.METRIC,
+            surface_text="latency",
+            normalized_name="latency",
+            evidence=EvidenceSpan(text="latency", start_char=10, end_char=17),
+            provenance=ExtractionProvenance(canonical_id="paper_1", chunk_id="chk_01"),
+        ),
+    ]
+
+    report = evaluator.evaluate_batch(
+        chunks_count=1,
+        entities=pred_entities,
+        statements=[],
+        relations=[],
+        rejected_records=[],
+        duration_ms=5.0,
+        ground_truth=gt_records,
+    )
+
+    # 1 TP (LSTM), 1 FP (latency), 1 FN (NSL-KDD)
+    assert report.ground_truth_status == "EVALUATED_AGAINST_GROUND_TRUTH"
+    assert report.scientific_precision == 0.5
+    assert report.scientific_recall == 0.5
+    assert report.scientific_f1 == 0.5
+
+    # Verify False Positive & False Negative Itemization
+    assert len(report.false_positive_records) == 1
+    assert report.false_positive_records[0]["normalized_text"] == "latency"
+    assert report.false_positive_records[0]["category"] == "METRIC"
+
+    assert len(report.false_negative_records) == 1
+    assert report.false_negative_records[0]["normalized_text"] == "nsl-kdd"
+    assert report.false_negative_records[0]["category"] == "DATASET"
+
+    # Verify Common Error Breakdown
+    assert report.common_error_categories["SPURIOUS_METRIC"] == 1
+    assert report.common_error_categories["MISSED_DATASET"] == 1
+

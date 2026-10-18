@@ -7,9 +7,11 @@ schema conformance, rejection rate) and provides ground-truth comparison metrics
 
 from __future__ import annotations
 
+import csv
 import logging
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dataset.schemas.scientific_knowledge import (
     ScientificEntityRecord,
@@ -83,6 +85,10 @@ class ExtractionEvaluationReport:
     evidence_correctness_accuracy: Optional[float] = None
     relation_extraction_metrics: Dict[str, Any] = field(default_factory=dict)
     category_scientific_metrics: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    false_positive_records: List[Dict[str, Any]] = field(default_factory=list)
+    false_negative_records: List[Dict[str, Any]] = field(default_factory=list)
+    common_error_categories: Dict[str, int] = field(default_factory=dict)
+    human_verdict_summary: Dict[str, int] = field(default_factory=dict)
 
 
 class ExtractionEvaluator:
@@ -271,6 +277,38 @@ class ExtractionEvaluator:
         report.scientific_recall = round(rec_strict, 4)
         report.scientific_f1 = round(f1_strict, 4)
 
+        # Collect explicit False Positive & False Negative records
+        fp_strict_items = sorted(list(pred_strict_set - gt_strict_set))
+        fn_strict_items = sorted(list(gt_strict_set - pred_strict_set))
+
+        report.false_positive_records = [
+            {
+                "chunk_id": item[0],
+                "category": item[1],
+                "normalized_text": item[2],
+                "error_type": "SPURIOUS_OR_UNMATCHED_PREDICTION",
+            }
+            for item in fp_strict_items
+        ]
+        report.false_negative_records = [
+            {
+                "chunk_id": item[0],
+                "category": item[1],
+                "normalized_text": item[2],
+                "error_type": "MISSED_GROUND_TRUTH_RECORD",
+            }
+            for item in fn_strict_items
+        ]
+
+        error_counts: Dict[str, int] = {}
+        for fp in report.false_positive_records:
+            k = f"SPURIOUS_{fp['category']}"
+            error_counts[k] = error_counts.get(k, 0) + 1
+        for fn in report.false_negative_records:
+            k = f"MISSED_{fn['category']}"
+            error_counts[k] = error_counts.get(k, 0) + 1
+        report.common_error_categories = error_counts
+
         # 3. Category-Wise Metrics (Strict)
         all_categories = sorted(list({g["category"] for g in gt_items}.union({p["category"] for p in pred_items})))
         cat_metrics: Dict[str, Dict[str, Any]] = {}
@@ -381,3 +419,78 @@ class ExtractionEvaluator:
                 "recall": None,
                 "f1_score": None,
             }
+
+    @staticmethod
+    def parse_human_annotations_csv(csv_path: Union[str, Path]) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+        """Parse human review CSV into evaluator-ready ground-truth items and status summary.
+
+        Reads standard ResearchGraph audit packet / annotation template CSV with human verdict
+        columns (CORRECT, PARTIALLY_CORRECT, UNSUPPORTED, MISSING).
+        """
+        path = Path(csv_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Annotation file not found: {path}")
+
+        gt_records: List[Dict[str, Any]] = []
+        verdict_counts: Dict[str, int] = {
+            "CORRECT": 0,
+            "PARTIALLY_CORRECT": 0,
+            "UNSUPPORTED": 0,
+            "MISSING": 0,
+            "UNREVIEWED": 0,
+        }
+
+        with open(path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                verdict = (row.get("human_verdict") or "").strip().upper()
+                if not verdict:
+                    verdict_counts["UNREVIEWED"] += 1
+                    continue
+
+                if verdict in verdict_counts:
+                    verdict_counts[verdict] += 1
+                else:
+                    verdict_counts[verdict] = verdict_counts.get(verdict, 0) + 1
+
+                cid = (row.get("chunk_id") or "").strip()
+                cat = (row.get("human_ground_truth_category") or "").strip().upper()
+                norm = (row.get("human_ground_truth_normalized_text") or "").strip()
+                ev = (row.get("human_ground_truth_evidence_span") or "").strip()
+
+                if verdict in ("CORRECT", "PARTIALLY_CORRECT"):
+                    # If human fields omitted on CORRECT, inherit system predictions
+                    if not cat:
+                        cat = (row.get("system_predicted_category") or "").strip().upper()
+                    if not norm:
+                        norm = (row.get("system_predicted_surface_text") or "").strip()
+                    if not ev:
+                        ev = (row.get("system_evidence_span") or "").strip()
+
+                    if cat and (norm or ev):
+                        gt_records.append({
+                            "chunk_id": cid,
+                            "category": cat,
+                            "normalized_text": norm or ev,
+                            "evidence_span": ev or norm,
+                            "source": row.get("source", ""),
+                            "target": row.get("target", ""),
+                            "attribution": row.get("human_attribution") or "AUTHOR_STATED",
+                        })
+
+                elif verdict == "MISSING":
+                    if cat and (norm or ev):
+                        gt_records.append({
+                            "chunk_id": cid,
+                            "category": cat,
+                            "normalized_text": norm or ev,
+                            "evidence_span": ev or norm,
+                            "source": row.get("source", ""),
+                            "target": row.get("target", ""),
+                            "attribution": row.get("human_attribution") or "AUTHOR_STATED",
+                        })
+
+                # UNSUPPORTED records are not added to ground truth (they serve as false positive check)
+
+        return gt_records, verdict_counts
+
