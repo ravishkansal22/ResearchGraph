@@ -132,7 +132,7 @@ def main():
         json.dump(audit_manifest, f, indent=2)
     logger.info(f"Saved audit packet manifest to {audit_manifest_path}")
 
-    # 5. Generate Audit Packet CSV
+    # 5. Generate Audit Packet CSVs (Master, Reviewer 1, Reviewer 2)
     csv_fieldnames = [
         "packet_index",
         "chunk_id",
@@ -146,100 +146,132 @@ def main():
         "system_predicted_category",
         "system_predicted_surface_text",
         "system_evidence_span",
+        "system_relation_source",
+        "system_relation_target",
         "human_ground_truth_category",
         "human_ground_truth_normalized_text",
         "human_ground_truth_evidence_span",
+        "human_relation_source",
+        "human_relation_target",
         "human_attribution",
         "human_verdict",
         "human_reviewer_comments",
+        "reviewer_id",
     ]
 
-    csv_path = manifests_dir / "scientific_extraction_v0.4.0_audit_packet_25.csv"
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
-        writer.writeheader()
+    def write_csv_packet(target_path: Path, rev_id: str = "") -> None:
+        with open(target_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
+            writer.writeheader()
 
-        for idx, cid in enumerate(ALL_SELECTED_IDS, 1):
-            s_meta = sampled_75_map[cid]
-            full_text = chunk_texts.get(cid, "")
-            preds = extracted_records.get(cid, [])
-            has_out = cid in SELECTED_CHUNK_IDS_WITH_OUTPUT
-            goal = "Precision & Evidence Grounding Verification" if has_out else "Recall Gap & Missed Knowledge Detection"
+            for idx, cid in enumerate(ALL_SELECTED_IDS, 1):
+                s_meta = sampled_75_map[cid]
+                full_text = chunk_texts.get(cid, "")
+                preds = extracted_records.get(cid, [])
+                has_out = cid in SELECTED_CHUNK_IDS_WITH_OUTPUT
+                goal = "Precision & Evidence Grounding Verification" if has_out else "Recall Gap & Missed Knowledge Detection"
 
-            if not preds:
-                # Provide 5 structured blank rows for chunks with zero predictions to allow thorough recall annotation
-                for slot in range(1, 6):
-                    writer.writerow({
-                        "packet_index": idx,
-                        "chunk_id": cid,
-                        "canonical_id": s_meta["canonical_id"],
-                        "section_title": s_meta["section_title"],
-                        "section_bucket": s_meta["section_bucket"],
-                        "has_system_output": False,
-                        "audit_investigation_goal": goal,
-                        "chunk_text": full_text,
-                        "system_record_type": "ADD_MISSING",
-                        "system_predicted_category": "",
-                        "system_predicted_surface_text": "",
-                        "system_evidence_span": "",
-                        "human_ground_truth_category": "",
-                        "human_ground_truth_normalized_text": "",
-                        "human_ground_truth_evidence_span": "",
-                        "human_attribution": "",
-                        "human_verdict": "",
-                        "human_reviewer_comments": "",
-                    })
-            else:
-                # 1. Existing predictions to assess
-                for p in preds:
-                    rec_type = "RELATION" if "relation_type" in p else ("STATEMENT" if "normalized_statement" in p else "ENTITY")
-                    cat = p.get("category") or p.get("relation_type", "")
-                    surf = p.get("surface_text", "")
-                    ev = p.get("evidence", {}).get("text", "")
-                    writer.writerow({
-                        "packet_index": idx,
-                        "chunk_id": cid,
-                        "canonical_id": s_meta["canonical_id"],
-                        "section_title": s_meta["section_title"],
-                        "section_bucket": s_meta["section_bucket"],
-                        "has_system_output": True,
-                        "audit_investigation_goal": goal,
-                        "chunk_text": full_text,
-                        "system_record_type": rec_type,
-                        "system_predicted_category": cat,
-                        "system_predicted_surface_text": surf,
-                        "system_evidence_span": ev,
-                        "human_ground_truth_category": "",
-                        "human_ground_truth_normalized_text": "",
-                        "human_ground_truth_evidence_span": "",
-                        "human_attribution": "",
-                        "human_verdict": "",
-                        "human_reviewer_comments": "",
-                    })
-                # 2. Add 3 blank candidate rows for adding missed items in chunks with predictions
-                for slot in range(1, 4):
-                    writer.writerow({
-                        "packet_index": idx,
-                        "chunk_id": cid,
-                        "canonical_id": s_meta["canonical_id"],
-                        "section_title": s_meta["section_title"],
-                        "section_bucket": s_meta["section_bucket"],
-                        "has_system_output": True,
-                        "audit_investigation_goal": goal,
-                        "chunk_text": full_text,
-                        "system_record_type": "ADD_MISSING",
-                        "system_predicted_category": "",
-                        "system_predicted_surface_text": "",
-                        "system_evidence_span": "",
-                        "human_ground_truth_category": "",
-                        "human_ground_truth_normalized_text": "",
-                        "human_ground_truth_evidence_span": "",
-                        "human_attribution": "",
-                        "human_verdict": "",
-                        "human_reviewer_comments": "",
-                    })
+                if not preds:
+                    # Provide 5 structured blank rows for chunks with zero predictions to allow thorough recall annotation
+                    for slot in range(1, 6):
+                        writer.writerow({
+                            "packet_index": idx,
+                            "chunk_id": cid,
+                            "canonical_id": s_meta["canonical_id"],
+                            "section_title": s_meta["section_title"],
+                            "section_bucket": s_meta["section_bucket"],
+                            "has_system_output": False,
+                            "audit_investigation_goal": goal,
+                            "chunk_text": full_text,
+                            "system_record_type": "ADD_MISSING",
+                            "system_predicted_category": "",
+                            "system_predicted_surface_text": "",
+                            "system_evidence_span": "",
+                            "system_relation_source": "",
+                            "system_relation_target": "",
+                            "human_ground_truth_category": "",
+                            "human_ground_truth_normalized_text": "",
+                            "human_ground_truth_evidence_span": "",
+                            "human_relation_source": "",
+                            "human_relation_target": "",
+                            "human_attribution": "",
+                            "human_verdict": "",
+                            "human_reviewer_comments": "",
+                            "reviewer_id": rev_id,
+                        })
+                else:
+                    # 1. Existing predictions to assess
+                    for p in preds:
+                        rec_type = "RELATION" if "relation_type" in p else ("STATEMENT" if "normalized_statement" in p else "ENTITY")
+                        cat = p.get("category") or p.get("relation_type", "")
+                        surf = p.get("surface_text", "")
+                        ev = p.get("evidence", {}).get("text", "")
+                        sys_src = p.get("source_id", "") if rec_type == "RELATION" else ""
+                        sys_tgt = p.get("target_id", "") if rec_type == "RELATION" else ""
+                        writer.writerow({
+                            "packet_index": idx,
+                            "chunk_id": cid,
+                            "canonical_id": s_meta["canonical_id"],
+                            "section_title": s_meta["section_title"],
+                            "section_bucket": s_meta["section_bucket"],
+                            "has_system_output": True,
+                            "audit_investigation_goal": goal,
+                            "chunk_text": full_text,
+                            "system_record_type": rec_type,
+                            "system_predicted_category": cat,
+                            "system_predicted_surface_text": surf,
+                            "system_evidence_span": ev,
+                            "system_relation_source": sys_src,
+                            "system_relation_target": sys_tgt,
+                            "human_ground_truth_category": "",
+                            "human_ground_truth_normalized_text": "",
+                            "human_ground_truth_evidence_span": "",
+                            "human_relation_source": "",
+                            "human_relation_target": "",
+                            "human_attribution": "",
+                            "human_verdict": "",
+                            "human_reviewer_comments": "",
+                            "reviewer_id": rev_id,
+                        })
+                    # 2. Add 3 blank candidate rows for adding missed items in chunks with predictions
+                    for slot in range(1, 4):
+                        writer.writerow({
+                            "packet_index": idx,
+                            "chunk_id": cid,
+                            "canonical_id": s_meta["canonical_id"],
+                            "section_title": s_meta["section_title"],
+                            "section_bucket": s_meta["section_bucket"],
+                            "has_system_output": True,
+                            "audit_investigation_goal": goal,
+                            "chunk_text": full_text,
+                            "system_record_type": "ADD_MISSING",
+                            "system_predicted_category": "",
+                            "system_predicted_surface_text": "",
+                            "system_evidence_span": "",
+                            "system_relation_source": "",
+                            "system_relation_target": "",
+                            "human_ground_truth_category": "",
+                            "human_ground_truth_normalized_text": "",
+                            "human_ground_truth_evidence_span": "",
+                            "human_relation_source": "",
+                            "human_relation_target": "",
+                            "human_attribution": "",
+                            "human_verdict": "",
+                            "human_reviewer_comments": "",
+                            "reviewer_id": rev_id,
+                        })
 
-    logger.info(f"Saved audit packet CSV to {csv_path}")
+    master_csv_path = manifests_dir / "scientific_extraction_v0.4.0_audit_packet_25.csv"
+    reviewer1_csv_path = manifests_dir / "scientific_extraction_v0.4.0_audit_packet_reviewer1.csv"
+    reviewer2_csv_path = manifests_dir / "scientific_extraction_v0.4.0_audit_packet_reviewer2.csv"
+
+    write_csv_packet(master_csv_path, rev_id="")
+    write_csv_packet(reviewer1_csv_path, rev_id="reviewer_1")
+    write_csv_packet(reviewer2_csv_path, rev_id="reviewer_2")
+
+    logger.info(f"Saved master audit packet CSV to {master_csv_path}")
+    logger.info(f"Saved Reviewer 1 packet CSV to {reviewer1_csv_path}")
+    logger.info(f"Saved Reviewer 2 packet CSV to {reviewer2_csv_path}")
 
     # 6. Generate Markdown Human Review Sheet
     md_path = manifests_dir / "scientific_extraction_v0.4.0_audit_packet_review_sheet.md"

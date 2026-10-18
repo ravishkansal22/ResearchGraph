@@ -22,6 +22,41 @@ from dataset.schemas.scientific_knowledge import (
 
 logger = logging.getLogger(__name__)
 
+# Valid taxonomy of categories supported by ResearchGraph schemas
+VALID_CATEGORIES = {
+    # Entities
+    "METHOD", "TASK", "DATASET", "METRIC", "DOMAIN", "PROBLEM", "BOTTLENECK", "ASSUMPTION",
+    # Statements
+    "CLAIM", "RESULT", "LIMITATION", "FUTURE_DIRECTION", "FAILURE_MODE",
+    # Relations
+    "ADDRESSES", "USES", "IMPROVES", "OUTPERFORMS", "LIMITED_BY", "EVALUATED_ON", "ASSUMES", "REPORTS", "SUGGESTS", "CONTRADICTS",
+}
+
+# Common spelling / plural aliases mapped cleanly to canonical schema categories
+CATEGORY_ALIASES: Dict[str, str] = {
+    "METHODS": "METHOD",
+    "ALGORITHM": "METHOD",
+    "TECHNIQUE": "METHOD",
+    "TASKS": "TASK",
+    "DATASETS": "DATASET",
+    "CORPUS": "DATASET",
+    "BENCHMARK": "DATASET",
+    "METRICS": "METRIC",
+    "DOMAINS": "DOMAIN",
+    "PROBLEMS": "PROBLEM",
+    "BOTTLENECKS": "BOTTLENECK",
+    "CHALLENGE": "BOTTLENECK",
+    "CHALLENGES": "BOTTLENECK",
+    "LIMITATIONS": "LIMITATION",
+    "RESULTS": "RESULT",
+    "FINDING": "RESULT",
+    "FINDINGS": "RESULT",
+    "CLAIMS": "CLAIM",
+    "CONTRIBUTION": "CLAIM",
+    "CONTRIBUTIONS": "CLAIM",
+    "FUTURE_DIRECTIONS": "FUTURE_DIRECTION",
+}
+
 
 @dataclass
 class CategoryMetrics:
@@ -223,12 +258,16 @@ class ExtractionEvaluator:
         # Ground truth format: Dict with {chunk_id, category, normalized_text, evidence_span, source, target}
         gt_items = []
         for gt in ground_truth:
-            cat = str(gt.get("category", "")).strip().upper()
+            raw_cat = str(gt.get("category", "")).strip().upper()
+            cat = CATEGORY_ALIASES.get(raw_cat, raw_cat)
             norm = str(gt.get("normalized_text", "")).lower().strip()
             cid = str(gt.get("chunk_id", "")).strip()
             ev = str(gt.get("evidence_span", "")).lower().strip()
             src = str(gt.get("source", "")).lower().strip()
             tgt = str(gt.get("target", "")).lower().strip()
+            is_rel = bool(src and tgt) or cat in {
+                "ADDRESSES", "USES", "IMPROVES", "OUTPERFORMS", "LIMITED_BY", "EVALUATED_ON", "ASSUMES", "REPORTS", "SUGGESTS", "CONTRADICTS"
+            }
             if cat and (norm or (src and tgt)):
                 gt_items.append({
                     "chunk_id": cid,
@@ -237,19 +276,22 @@ class ExtractionEvaluator:
                     "evidence_span": ev,
                     "source": src,
                     "target": tgt,
-                    "is_relation": bool(src and tgt),
+                    "is_relation": is_rel,
                 })
 
         pred_items = []
         for p in predicted_records:
             cat = getattr(p, "category", None) or getattr(p, "relation_type", None)
-            cat_str = (cat.value if hasattr(cat, "value") else str(cat)).strip().upper()
+            raw_cat = (cat.value if hasattr(cat, "value") else str(cat)).strip().upper()
+            cat_str = CATEGORY_ALIASES.get(raw_cat, raw_cat)
             norm = (getattr(p, "normalized_name", None) or getattr(p, "normalized_statement", None) or p.surface_text or "").lower().strip()
             cid = p.provenance.chunk_id
             ev = (p.evidence.text if getattr(p, "evidence", None) else "").lower().strip()
             src = (getattr(p, "source_id", "") or "").lower().strip()
             tgt = (getattr(p, "target_id", "") or "").lower().strip()
-            is_rel = hasattr(p, "relation_type") or hasattr(p, "source_id")
+            is_rel = hasattr(p, "relation_type") or hasattr(p, "source_id") or cat_str in {
+                "ADDRESSES", "USES", "IMPROVES", "OUTPERFORMS", "LIMITED_BY", "EVALUATED_ON", "ASSUMES", "REPORTS", "SUGGESTS", "CONTRADICTS"
+            }
             pred_items.append({
                 "chunk_id": cid,
                 "category": cat_str,
@@ -341,8 +383,25 @@ class ExtractionEvaluator:
         matched_gt_indices = set()
         tp_relaxed = 0
 
+        # Deduplicate predictions and ground truth for clean relaxed evaluation
+        unique_preds = []
+        seen_preds = set()
         for p in pred_items:
-            for g_idx, g in enumerate(gt_items):
+            k = (p["chunk_id"], p["category"], p["normalized_text"])
+            if k not in seen_preds:
+                seen_preds.add(k)
+                unique_preds.append(p)
+
+        unique_gts = []
+        seen_gts = set()
+        for g in gt_items:
+            k = (g["chunk_id"], g["category"], g["normalized_text"])
+            if k not in seen_gts:
+                seen_gts.add(k)
+                unique_gts.append(g)
+
+        for p in unique_preds:
+            for g_idx, g in enumerate(unique_gts):
                 if g_idx in matched_gt_indices:
                     continue
                 if p["chunk_id"] == g["chunk_id"] and p["category"] == g["category"]:
@@ -357,8 +416,8 @@ class ExtractionEvaluator:
                         matched_gt_indices.add(g_idx)
                         break
 
-        fp_relaxed = max(0, len(pred_items) - tp_relaxed)
-        fn_relaxed = max(0, len(gt_items) - tp_relaxed)
+        fp_relaxed = max(0, len(unique_preds) - tp_relaxed)
+        fn_relaxed = max(0, len(unique_gts) - tp_relaxed)
 
         prec_relaxed = tp_relaxed / (tp_relaxed + fp_relaxed) if (tp_relaxed + fp_relaxed) > 0 else 0.0
         rec_relaxed = tp_relaxed / (tp_relaxed + fn_relaxed) if (tp_relaxed + fn_relaxed) > 0 else 0.0
@@ -432,6 +491,7 @@ class ExtractionEvaluator:
             raise FileNotFoundError(f"Annotation file not found: {path}")
 
         gt_records: List[Dict[str, Any]] = []
+        seen_gt_keys = set()
         verdict_counts: Dict[str, int] = {
             "CORRECT": 0,
             "PARTIALLY_CORRECT": 0,
@@ -444,7 +504,7 @@ class ExtractionEvaluator:
             reader = csv.DictReader(f)
             for row in reader:
                 verdict = (row.get("human_verdict") or "").strip().upper()
-                if not verdict:
+                if not verdict or verdict in ("UNREVIEWED", "BLANK", "PENDING"):
                     verdict_counts["UNREVIEWED"] += 1
                     continue
 
@@ -454,41 +514,52 @@ class ExtractionEvaluator:
                     verdict_counts[verdict] = verdict_counts.get(verdict, 0) + 1
 
                 cid = (row.get("chunk_id") or "").strip()
-                cat = (row.get("human_ground_truth_category") or "").strip().upper()
+                raw_cat = (row.get("human_ground_truth_category") or "").strip().upper()
+                cat = CATEGORY_ALIASES.get(raw_cat, raw_cat)
                 norm = (row.get("human_ground_truth_normalized_text") or "").strip()
                 ev = (row.get("human_ground_truth_evidence_span") or "").strip()
+                src = (row.get("human_relation_source") or row.get("system_relation_source") or row.get("source") or "").strip()
+                tgt = (row.get("human_relation_target") or row.get("system_relation_target") or row.get("target") or "").strip()
+                attr = (row.get("human_attribution") or "AUTHOR_STATED").strip().upper()
 
                 if verdict in ("CORRECT", "PARTIALLY_CORRECT"):
                     # If human fields omitted on CORRECT, inherit system predictions
                     if not cat:
-                        cat = (row.get("system_predicted_category") or "").strip().upper()
+                        sys_cat = (row.get("system_predicted_category") or "").strip().upper()
+                        cat = CATEGORY_ALIASES.get(sys_cat, sys_cat)
                     if not norm:
                         norm = (row.get("system_predicted_surface_text") or "").strip()
                     if not ev:
                         ev = (row.get("system_evidence_span") or "").strip()
 
-                    if cat and (norm or ev):
-                        gt_records.append({
-                            "chunk_id": cid,
-                            "category": cat,
-                            "normalized_text": norm or ev,
-                            "evidence_span": ev or norm,
-                            "source": row.get("source", ""),
-                            "target": row.get("target", ""),
-                            "attribution": row.get("human_attribution") or "AUTHOR_STATED",
-                        })
+                    if cat and (norm or ev or (src and tgt)):
+                        key = (cid, cat, (norm or ev).lower(), src.lower(), tgt.lower())
+                        if key not in seen_gt_keys:
+                            seen_gt_keys.add(key)
+                            gt_records.append({
+                                "chunk_id": cid,
+                                "category": cat,
+                                "normalized_text": norm or ev,
+                                "evidence_span": ev or norm,
+                                "source": src,
+                                "target": tgt,
+                                "attribution": attr,
+                            })
 
                 elif verdict == "MISSING":
-                    if cat and (norm or ev):
-                        gt_records.append({
-                            "chunk_id": cid,
-                            "category": cat,
-                            "normalized_text": norm or ev,
-                            "evidence_span": ev or norm,
-                            "source": row.get("source", ""),
-                            "target": row.get("target", ""),
-                            "attribution": row.get("human_attribution") or "AUTHOR_STATED",
-                        })
+                    if cat and (norm or ev or (src and tgt)):
+                        key = (cid, cat, (norm or ev).lower(), src.lower(), tgt.lower())
+                        if key not in seen_gt_keys:
+                            seen_gt_keys.add(key)
+                            gt_records.append({
+                                "chunk_id": cid,
+                                "category": cat,
+                                "normalized_text": norm or ev,
+                                "evidence_span": ev or norm,
+                                "source": src,
+                                "target": tgt,
+                                "attribution": attr,
+                            })
 
                 # UNSUPPORTED records are not added to ground truth (they serve as false positive check)
 

@@ -1,0 +1,8 @@
+{
+  "status": "PENDING_HUMAN_ANNOTATION",
+  "annotations_file": "dataset\\manifests\\scientific_extraction_v0.4.0_audit_packet_25.csv",
+  "total_unreviewed_rows": 164,
+  "completed_annotations_count": 0,
+  "message": "Human review packet contains 0 completed annotations. All ground-truth labels remain blank as required prior to human study.",
+  "scientific_metrics_status": "UNVERIFIED"
+}
