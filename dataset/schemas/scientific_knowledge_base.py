@@ -32,6 +32,28 @@ class AliasResolutionStatus(str, Enum):
     SEPARATE = "SEPARATE"              # Confirmed distinct concept (must not merge)
 
 
+class StructuralValidityStatus(str, Enum):
+    """Structural and schema conformance status."""
+    STRUCTURALLY_VALID = "STRUCTURALLY_VALID"      # Record adheres strictly to schema and endpoint referential integrity
+    STRUCTURALLY_INVALID = "STRUCTURALLY_INVALID"  # Record contains format or structural constraint violations
+
+
+class EvidenceSupportStatus(str, Enum):
+    """Scientific evidence entailment status for propositions and relationships."""
+    NOT_ASSESSED = "NOT_ASSESSED"                  # Not yet evaluated for semantic entailment
+    SUPPORTED = "SUPPORTED"                        # Cited evidence directly entails the subject-predicate-object assertion
+    UNSUPPORTED = "UNSUPPORTED"                    # Cited evidence does not entail the assertion (e.g. Cartesian table artifacts)
+    AMBIGUOUS = "AMBIGUOUS"                        # Evidence text is ambiguous or insufficient to confirm entailment
+
+
+class HumanVerificationStatus(str, Enum):
+    """Independent qualified human expert verification status."""
+    PENDING = "PENDING"                            # Awaiting human benchmark review
+    VERIFIED = "VERIFIED"                          # Human expert verified factual and scientific correctness
+    REJECTED = "REJECTED"                          # Human expert confirmed scientific error or extraction hallucination
+    NEEDS_ADJUDICATION = "NEEDS_ADJUDICATION"      # Multiple reviewers disagreed; requires senior adjudication
+
+
 class QuarantineReason(str, Enum):
     """Diagnostic categorization for quarantined extraction records."""
     DANGLING_RELATION_ENDPOINT = "DANGLING_RELATION_ENDPOINT"
@@ -125,7 +147,7 @@ class CanonicalStatementNode(BaseModel):
 class CanonicalRelationshipNode(BaseModel):
     """Verified semantic relationship between canonical entities or statements."""
     relationship_id: str = Field(..., description="Stable unique relationship ID (e.g. kb_rel_xxx)")
-    schema_version: str = Field(default="0.5.0", description="Schema definition version")
+    schema_version: str = Field(default="0.5.1", description="Schema definition version")
     relation_type: ScientificRelationType = Field(..., description="Semantic relation predicate")
     source_id: str = Field(..., description="Foreign key to subject node (entity or statement)")
     target_id: str = Field(..., description="Foreign key to object node (entity or statement)")
@@ -140,7 +162,23 @@ class CanonicalRelationshipNode(BaseModel):
     is_directed: bool = Field(default=True, description="True if relationship is directed")
     confidence_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Extraction confidence score")
     extraction_version: str = Field(default="v0.4.1", description="Originating pipeline version")
-    validation_status: ValidationStatus = Field(default=ValidationStatus.VALIDATED, description="Grounding status")
+    validation_status: ValidationStatus = Field(default=ValidationStatus.VALIDATED, description="Grounding status (historical compatibility)")
+    structural_validity: StructuralValidityStatus = Field(
+        default=StructuralValidityStatus.STRUCTURALLY_VALID,
+        description="Schema and endpoint referential integrity status",
+    )
+    evidence_support: EvidenceSupportStatus = Field(
+        default=EvidenceSupportStatus.NOT_ASSESSED,
+        description="Scientific entailment status of relationship given evidence",
+    )
+    human_verification: HumanVerificationStatus = Field(
+        default=HumanVerificationStatus.PENDING,
+        description="Qualified human review status",
+    )
+    correction_notes: Optional[str] = Field(
+        default=None,
+        description="Diagnostic reason or correction rationale",
+    )
     upstream_relation_id: str = Field(..., description="Relation ID from upstream extraction stage")
 
 
@@ -167,15 +205,17 @@ class AliasMapping(BaseModel):
 
 class KnowledgeBaseManifest(BaseModel):
     """Comprehensive, reproducible build manifest for the Scientific Knowledge Base."""
-    kb_version: str = Field(default="v0.5.0", description="Knowledge base release version")
-    schema_version: str = Field(default="0.5.0", description="Schema version")
+    kb_version: str = Field(default="v0.5.1", description="Knowledge base release version")
+    schema_version: str = Field(default="0.5.1", description="Schema version")
     build_timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     upstream_sources: Dict[str, str] = Field(default_factory=dict, description="Paths and versions of upstream inputs")
     total_papers_count: int = Field(default=0, description="Total canonical papers ingested")
     total_canonical_entities_count: int = Field(default=0, description="Total unique canonical entities")
     total_entity_mentions_count: int = Field(default=0, description="Total individual entity mentions grounded")
     total_statements_count: int = Field(default=0, description="Total scientific statements")
-    total_relationships_count: int = Field(default=0, description="Total verified relationships")
+    total_relationships_count: int = Field(default=0, description="Total persisted relationships")
+    trusted_relationships_count: int = Field(default=0, description="Count of evidence-supported relationships")
+    unsupported_relationships_count: int = Field(default=0, description="Count of unsupported relationships flagged")
     total_quarantined_records_count: int = Field(default=0, description="Total records quarantined")
     confirmed_aliases_count: int = Field(default=0, description="Count of confirmed aliases applied")
     entities_by_category: Dict[str, int] = Field(default_factory=dict, description="Canonical entity counts by category")
@@ -184,3 +224,4 @@ class KnowledgeBaseManifest(BaseModel):
     quarantine_reasons_breakdown: Dict[str, int] = Field(default_factory=dict, description="Breakdown of quarantine reasons")
     referential_integrity_pass_rate: float = Field(default=1.0, description="Fraction of valid relationships")
     provenance_completeness_rate: float = Field(default=1.0, description="Fraction of records with full provenance")
+

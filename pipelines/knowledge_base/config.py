@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field
 class KnowledgeBaseConfig(BaseModel):
     """Runtime configuration for knowledge base ingestion and building."""
 
-    kb_version: str = Field(default="v0.5.0", description="Target knowledge base release version")
-    schema_version: str = Field(default="0.5.0", description="Schema definition version")
+    kb_version: str = Field(default="v0.5.1", description="Target knowledge base release version")
+    schema_version: str = Field(default="0.5.1", description="Schema definition version")
 
     # Upstream data sources
     papers_path: Path = Field(
@@ -40,7 +40,7 @@ class KnowledgeBaseConfig(BaseModel):
 
     # Target persistence directory
     output_dir: Path = Field(
-        default=Path("dataset/processed/v0.5.0"),
+        default=Path("dataset/processed/v0.5.1"),
         description="Target directory for versioned knowledge base artifacts",
     )
     manifest_dir: Path = Field(

@@ -24,12 +24,12 @@ from pipelines.knowledge_base.pipeline import ScientificKnowledgeBasePipeline
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build ResearchGraph Phase 4: Scientific Knowledge Base (v0.5.0)",
+        description="Build ResearchGraph Scientific Knowledge Base (v0.5.1)",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("dataset/processed/v0.5.0"),
+        default=Path("dataset/processed/v0.5.1"),
         help="Target output directory for persistent snapshots and database",
     )
     parser.add_argument(
@@ -81,7 +81,9 @@ def main() -> int:
     print(f"Canonical Entities Consolidated: {manifest.total_canonical_entities_count}")
     print(f"Entity Mentions Grounded:        {manifest.total_entity_mentions_count}")
     print(f"Scientific Statements:           {manifest.total_statements_count}")
-    print(f"Verified Relationships:          {manifest.total_relationships_count}")
+    print(f"Total Relationships:             {manifest.total_relationships_count}")
+    print(f"  - Trusted (Supported):         {manifest.trusted_relationships_count}")
+    print(f"  - Unsupported (Diagnostic):    {manifest.unsupported_relationships_count}")
     print(f"Quarantined Records:             {manifest.total_quarantined_records_count}")
     print(f"Referential Integrity Pass Rate: {manifest.referential_integrity_pass_rate * 100:.2f}%")
     print(f"Provenance Completeness:         {manifest.provenance_completeness_rate * 100:.2f}%")

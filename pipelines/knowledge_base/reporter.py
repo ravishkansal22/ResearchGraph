@@ -60,6 +60,15 @@ class KnowledgeBaseReporter:
         )
         ref_pass_rate = (len(relationships) / total_rels) if total_rels > 0 else 1.0
 
+        trusted_rels = sum(
+            1 for r in relationships
+            if getattr(r, "evidence_support", None) and getattr(r.evidence_support, "value", r.evidence_support) == "SUPPORTED"
+        )
+        unsupported_rels = sum(
+            1 for r in relationships
+            if getattr(r, "evidence_support", None) and getattr(r.evidence_support, "value", r.evidence_support) == "UNSUPPORTED"
+        )
+
         total_extracted = len(mentions) + len(statements) + len(relationships)
         prov_complete = total_extracted  # all accepted records have validated provenance
         prov_rate = 1.0 if total_extracted > 0 else 1.0
@@ -74,6 +83,8 @@ class KnowledgeBaseReporter:
             total_entity_mentions_count=len(mentions),
             total_statements_count=len(statements),
             total_relationships_count=len(relationships),
+            trusted_relationships_count=trusted_rels,
+            unsupported_relationships_count=unsupported_rels,
             total_quarantined_records_count=len(quarantine),
             confirmed_aliases_count=len([a for a in aliases if a.status.value == "CONFIRMED"]),
             entities_by_category=dict(sorted(entities_by_cat.items())),
@@ -121,7 +132,7 @@ class KnowledgeBaseReporter:
             for src, path_str in manifest.upstream_sources.items()
         )
 
-        md = f"""# ResearchGraph Phase 4 Quality & Integrity Report
+        md = f"""# ResearchGraph Phase 4.1 Quality & Integrity Report
 **Release Version:** `{manifest.kb_version}`  
 **Schema Version:** `{manifest.schema_version}`  
 **Build Timestamp:** `{manifest.build_timestamp}`  
@@ -138,7 +149,9 @@ class KnowledgeBaseReporter:
 | Total Canonical Entities | **{manifest.total_canonical_entities_count}** |
 | Total Entity Mentions Grounded | **{manifest.total_entity_mentions_count}** |
 | Total Scientific Statements | **{manifest.total_statements_count}** |
-| Total Verified Relationships | **{manifest.total_relationships_count}** |
+| Total Persisted Relationships | **{manifest.total_relationships_count}** |
+| Trusted Relationships (Supported) | **{manifest.trusted_relationships_count}** |
+| Unsupported Relationships Flagged | **{manifest.unsupported_relationships_count}** |
 | Total Quarantined Records | **{manifest.total_quarantined_records_count}** |
 | Confirmed Aliases Applied | **{manifest.confirmed_aliases_count}** |
 | Referential Integrity Pass Rate | **{manifest.referential_integrity_pass_rate * 100:.2f}%** |

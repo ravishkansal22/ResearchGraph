@@ -30,10 +30,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Query ResearchGraph Scientific Knowledge Base",
     )
+    default_db = (
+        Path("dataset/processed/v0.5.1/knowledge_base.db")
+        if Path("dataset/processed/v0.5.1/knowledge_base.db").exists()
+        else Path("dataset/processed/v0.5.0/knowledge_base.db")
+    )
     parser.add_argument(
         "--db",
         type=Path,
-        default=Path("dataset/processed/v0.5.0/knowledge_base.db"),
+        default=default_db,
         help="Path to SQLite knowledge base file",
     )
     parser.add_argument("--paper", type=str, help="Retrieve paper by canonical ID")
@@ -42,9 +47,25 @@ def main() -> int:
     parser.add_argument("--chunk", type=str, help="Retrieve all records originating from chunk ID")
     parser.add_argument("--methods-for-problem", type=str, help="Find methods addressing specified problem")
     parser.add_argument("--relationships", type=str, help="Get relationships for entity ID")
+    parser.add_argument(
+        "--include-unsupported",
+        action="store_true",
+        help="Include unsupported, ambiguous, or unassessed relationships in queries (default: trusted only)",
+    )
+    parser.add_argument(
+        "--evidence-support",
+        type=str,
+        default=None,
+        help="Filter relationships explicitly by evidence support (SUPPORTED, UNSUPPORTED, AMBIGUOUS, NOT_ASSESSED)",
+    )
+    parser.add_argument(
+        "--excluded-relationships",
+        action="store_true",
+        help="Inspect relationships excluded from trusted queries along with diagnostic correction notes",
+    )
     parser.add_argument("--trace", type=str, help="Trace canonical entity ID back to mentions and papers")
     parser.add_argument("--quarantine", action="store_true", help="Inspect quarantined records")
-    parser.add_argument("--reason", type=str, default=None, help="Filter quarantine by reason")
+    parser.add_argument("--reason", type=str, default=None, help="Filter quarantine or excluded records by reason")
     parser.add_argument("--limit", type=int, default=20, help="Limit number of query results")
 
     args = parser.parse_args()
@@ -73,12 +94,30 @@ def main() -> int:
         print_json(chunk_records)
 
     elif args.methods_for_problem:
-        methods = engine.find_methods_for_problem(args.methods_for_problem)
+        methods = engine.find_methods_for_problem(
+            args.methods_for_problem,
+            trusted_only=not args.include_unsupported,
+            include_unsupported=args.include_unsupported,
+            evidence_support=args.evidence_support,
+        )
         print_json(methods)
 
     elif args.relationships:
-        rels = engine.get_relationships_for_entity(args.relationships)
+        rels = engine.get_relationships_for_entity(
+            args.relationships,
+            trusted_only=not args.include_unsupported,
+            include_unsupported=args.include_unsupported,
+            evidence_support=args.evidence_support,
+        )
         print_json(rels)
+
+    elif args.excluded_relationships:
+        excluded = engine.get_excluded_relationships(
+            reason=args.reason,
+            evidence_support=args.evidence_support,
+            limit=args.limit,
+        )
+        print_json(excluded)
 
     elif args.trace:
         traces = engine.trace_entity_mentions(args.trace)

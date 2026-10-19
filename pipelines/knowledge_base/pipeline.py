@@ -282,6 +282,8 @@ class ScientificKnowledgeBasePipeline:
         valid_entity_ids = set(canonical_entities.keys())
         valid_statement_ids = set(validated_statements.keys())
 
+        entity_names = {eid: node.canonical_name for eid, node in canonical_entities.items()}
+
         for raw_rel in raw_relationships:
             rel_node, rel_quar = validate_relationship_record(
                 raw_rel,
@@ -289,6 +291,7 @@ class ScientificKnowledgeBasePipeline:
                 valid_statement_ids=valid_statement_ids,
                 upstream_to_kb=upstream_to_kb,
                 source_version="v0.4.0",
+                entity_names=entity_names,
             )
             if rel_quar:
                 quarantined_records.append(rel_quar)

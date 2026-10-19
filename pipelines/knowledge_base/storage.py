@@ -215,6 +215,10 @@ class KnowledgeBaseStorage:
                     "attribution": r.attribution.value,
                     "confidence_score": r.confidence_score,
                     "extraction_version": r.extraction_version,
+                    "structural_validity": r.structural_validity.value,
+                    "evidence_support": r.evidence_support.value,
+                    "human_verification": r.human_verification.value,
+                    "correction_notes": r.correction_notes or "",
                     "upstream_relation_id": r.upstream_relation_id,
                 }
                 for r in relationships
@@ -329,6 +333,10 @@ class KnowledgeBaseStorage:
             confidence_score REAL NOT NULL,
             extraction_version TEXT NOT NULL,
             validation_status TEXT NOT NULL,
+            structural_validity TEXT NOT NULL DEFAULT 'STRUCTURALLY_VALID',
+            evidence_support TEXT NOT NULL DEFAULT 'NOT_ASSESSED',
+            human_verification TEXT NOT NULL DEFAULT 'PENDING',
+            correction_notes TEXT,
             upstream_relation_id TEXT NOT NULL,
             FOREIGN KEY(paper_id) REFERENCES papers(paper_id)
         );
@@ -366,6 +374,8 @@ class KnowledgeBaseStorage:
         CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target_id);
         CREATE INDEX IF NOT EXISTS idx_relationships_type ON relationships(relation_type);
         CREATE INDEX IF NOT EXISTS idx_relationships_paper_id ON relationships(paper_id);
+        CREATE INDEX IF NOT EXISTS idx_relationships_evidence_support ON relationships(evidence_support);
+        CREATE INDEX IF NOT EXISTS idx_relationships_human_verification ON relationships(human_verification);
         CREATE INDEX IF NOT EXISTS idx_quarantine_reason ON quarantined_records(quarantine_reason);
         """)
         conn.commit()
@@ -522,8 +532,10 @@ class KnowledgeBaseStorage:
                     relationship_id, schema_version, relation_type, source_id, target_id,
                     source_type, target_type, paper_id, chunk_id, surface_text, evidence_text,
                     start_char, end_char, provenance_json, attribution, is_directed,
-                    confidence_score, extraction_version, validation_status, upstream_relation_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    confidence_score, extraction_version, validation_status,
+                    structural_validity, evidence_support, human_verification, correction_notes,
+                    upstream_relation_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
@@ -546,6 +558,10 @@ class KnowledgeBaseStorage:
                         r.confidence_score,
                         r.extraction_version,
                         r.validation_status.value,
+                        r.structural_validity.value,
+                        r.evidence_support.value,
+                        r.human_verification.value,
+                        r.correction_notes,
                         r.upstream_relation_id,
                     )
                     for r in relationships

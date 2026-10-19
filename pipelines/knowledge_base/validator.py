@@ -27,8 +27,14 @@ from dataset.schemas.scientific_knowledge_base import (
     CanonicalRelationshipNode,
     CanonicalStatementNode,
     EntityMention,
+    EvidenceSupportStatus,
+    HumanVerificationStatus,
     QuarantineReason,
     QuarantinedRecord,
+    StructuralValidityStatus,
+)
+from pipelines.knowledge_base.relationship_validator import (
+    evaluate_relationship_evidence_support,
 )
 from pipelines.knowledge_base.normalizer import (
     generate_canonical_relationship_id,
@@ -343,10 +349,12 @@ def validate_relationship_record(
     valid_statement_ids: Set[str],
     upstream_to_kb: Dict[str, str],
     source_version: str = "v0.4.0",
+    entity_names: Optional[Dict[str, str]] = None,
 ) -> Tuple[Optional[CanonicalRelationshipNode], Optional[QuarantinedRecord]]:
     """Validate a raw relationship record and resolve its endpoints to canonical node IDs.
     
     If either endpoint cannot be resolved, quarantines the record with DANGLING_RELATION_ENDPOINT.
+    Assesses structural validity and evidence support (detecting Cartesian product artifacts).
     """
     upstream_id = raw.get("relation_id") or raw.get("record_id")
     if not upstream_id:
@@ -464,8 +472,33 @@ def validate_relationship_record(
         except ValueError:
             val_status = ValidationStatus.VALIDATED
 
+    # Resolve surface names for evidence support evaluation
+    src_name = (entity_names or {}).get(source_kb_id, "")
+    tgt_name = (entity_names or {}).get(target_kb_id, "")
+    surface_text = raw.get("surface_text", "")
+    if not src_name and surface_text:
+        if " addresses " in surface_text:
+            src_name = surface_text.split(" addresses ")[0].strip()
+        elif " limited by " in surface_text:
+            src_name = surface_text.split(" limited by ")[0].strip()
+    if not tgt_name and surface_text:
+        if " addresses " in surface_text:
+            tgt_name = surface_text.split(" addresses ")[1].strip()
+        elif " limited by " in surface_text:
+            tgt_name = surface_text.split(" limited by ")[1].strip()
+
+    ev_support, corr_notes = evaluate_relationship_evidence_support(
+        source_name=src_name or source_kb_id,
+        target_name=tgt_name or target_kb_id,
+        relation_type=rel_type.value,
+        evidence_text=ev_span.text,
+        chunk_id=prov.chunk_id,
+        surface_text=surface_text,
+    )
+
     rel_node = CanonicalRelationshipNode(
         relationship_id=rel_id,
+        schema_version="0.5.1",
         relation_type=rel_type,
         source_id=source_kb_id,
         target_id=target_kb_id,
@@ -473,7 +506,7 @@ def validate_relationship_record(
         target_type=target_type,
         paper_id=prov.canonical_id,
         chunk_id=prov.chunk_id,
-        surface_text=raw.get("surface_text"),
+        surface_text=surface_text,
         evidence=ev_span,
         provenance=prov,
         attribution=attribution,
@@ -481,6 +514,10 @@ def validate_relationship_record(
         confidence_score=float(raw.get("confidence_score", 1.0)),
         extraction_version=str(raw.get("extraction_version", source_version)),
         validation_status=val_status,
+        structural_validity=StructuralValidityStatus.STRUCTURALLY_VALID,
+        evidence_support=ev_support,
+        human_verification=HumanVerificationStatus.PENDING,
+        correction_notes=corr_notes,
         upstream_relation_id=upstream_id,
     )
     return rel_node, None

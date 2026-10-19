@@ -1,0 +1,43 @@
+{
+  "kb_version": "v0.5.1",
+  "schema_version": "0.5.1",
+  "build_timestamp": "2026-10-19T06:19:28.142355+00:00",
+  "upstream_sources": {
+    "phase1_canonical_papers": "dataset\\processed\\v0.1.0\\canonical_papers.jsonl",
+    "phase2_processed_chunks": "dataset\\processed\\v0.3.0\\chunks.jsonl",
+    "phase3_v040_extractions": "dataset\\processed\\v0.4.0\\extracted_records.jsonl",
+    "phase3_v041_extractions": "dataset\\processed\\v0.4.1\\extracted_records.jsonl",
+    "phase3_v040_relationships": "dataset\\processed\\v0.4.0\\extracted_relationships.jsonl"
+  },
+  "total_papers_count": 528,
+  "total_canonical_entities_count": 68,
+  "total_entity_mentions_count": 267,
+  "total_statements_count": 22,
+  "total_relationships_count": 9,
+  "trusted_relationships_count": 0,
+  "unsupported_relationships_count": 9,
+  "total_quarantined_records_count": 0,
+  "confirmed_aliases_count": 66,
+  "entities_by_category": {
+    "BOTTLENECK": 5,
+    "DATASET": 5,
+    "DOMAIN": 8,
+    "METHOD": 32,
+    "METRIC": 4,
+    "PROBLEM": 9,
+    "TASK": 5
+  },
+  "statements_by_category": {
+    "CLAIM": 12,
+    "FUTURE_DIRECTION": 4,
+    "LIMITATION": 4,
+    "RESULT": 2
+  },
+  "relationships_by_type": {
+    "ADDRESSES": 6,
+    "LIMITED_BY": 3
+  },
+  "quarantine_reasons_breakdown": {},
+  "referential_integrity_pass_rate": 1.0,
+  "provenance_completeness_rate": 1.0
+}

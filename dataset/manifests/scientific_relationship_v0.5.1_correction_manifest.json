@@ -1,0 +1,392 @@
+{
+  "manifest_version": "1.0.0",
+  "release_version": "v0.5.1",
+  "created_at": "2026-10-19T06:20:44.820980+00:00",
+  "source_v0_5_0_database": "dataset/processed/v0.5.0/knowledge_base.db",
+  "target_v0_5_1_database": "dataset/processed/v0.5.1/knowledge_base.db",
+  "correction_summary": {
+    "total_audited_relationships": 9,
+    "structurally_valid_count": 9,
+    "structurally_invalid_count": 0,
+    "evidence_supported_count": 0,
+    "evidence_unsupported_count": 9,
+    "evidence_ambiguous_count": 0,
+    "evidence_not_assessed_count": 0,
+    "human_verified_count": 0,
+    "human_rejected_count": 0,
+    "human_pending_count": 9,
+    "human_adjudication_count": 0,
+    "action_taken": "Marked all 9 cross-row Cartesian product table relationships as UNSUPPORTED; excluded from trusted queries by default."
+  },
+  "affected_records": [
+    {
+      "relationship_id": "kb_rel_0d988b13f24c",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_04_50714b07",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_0ded337c3164",
+        "canonical_name": "machine learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_bb4a712a7c19",
+        "canonical_name": "anomaly detection",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Machine Learning addresses anomaly detection",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'machine learning' belongs to table item 1 whereas Object 'anomaly detection' belongs to table item 17 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_2fcbf639a5cf",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_01_f3a0f6bc",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_5af55d54ed58",
+        "canonical_name": "ensemble learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_8d4eecdbfd8f",
+        "canonical_name": "data imbalance",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Ensemble learning addresses Data Imbalance",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'ensemble learning' belongs to table item 9 whereas Object 'data imbalance' belongs to table item 6 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_558c0922c745",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_07_bc62b26d",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_e4c4728c8c81",
+        "canonical_name": "federated learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_8d4eecdbfd8f",
+        "canonical_name": "data imbalance",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Federated Learning addresses Data Imbalance",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'federated learning' belongs to table item 3 whereas Object 'data imbalance' belongs to table item 6 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_7c08ae08b2d0",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_03_37e8ba94",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_0ded337c3164",
+        "canonical_name": "machine learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_8d4eecdbfd8f",
+        "canonical_name": "data imbalance",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Machine Learning addresses Data Imbalance",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'machine learning' belongs to table item 1 whereas Object 'data imbalance' belongs to table item 6 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_8bef13af90e9",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_08_936f5568",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_e4c4728c8c81",
+        "canonical_name": "federated learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_bb4a712a7c19",
+        "canonical_name": "anomaly detection",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Federated Learning addresses anomaly detection",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'federated learning' belongs to table item 3 whereas Object 'anomaly detection' belongs to table item 17 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_9eacb770b891",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_12_a495545d",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_e4c4728c8c81",
+        "canonical_name": "federated learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_bottleneck_00a69c5e2c03",
+        "canonical_name": "computational cost",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "LIMITED_BY",
+      "surface_text": "Federated Learning limited by Computational Cost",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.86,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'federated learning' belongs to table item 3 whereas Object 'computational cost' belongs to table item 7 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_bdeea8a57805",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_02_9d60831c",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_5af55d54ed58",
+        "canonical_name": "ensemble learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_problem_bb4a712a7c19",
+        "canonical_name": "anomaly detection",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "ADDRESSES",
+      "surface_text": "Ensemble learning addresses anomaly detection",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.88,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'ensemble learning' belongs to table item 9 whereas Object 'anomaly detection' belongs to table item 17 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_bf57d03902f7",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_09_010bf33a",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_5af55d54ed58",
+        "canonical_name": "ensemble learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_bottleneck_00a69c5e2c03",
+        "canonical_name": "computational cost",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "LIMITED_BY",
+      "surface_text": "Ensemble learning limited by Computational Cost",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.86,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'ensemble learning' belongs to table item 9 whereas Object 'computational cost' belongs to table item 7 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    },
+    {
+      "relationship_id": "kb_rel_c043dbedbb58",
+      "upstream_relation_id": "rel_chk_rg_doi_ebe643c2b3dd_A_0135_10_8f506ef6",
+      "paper_id": "rg_doi_ebe643c2b3dd",
+      "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+      "source": {
+        "entity_id": "kb_ent_method_0ded337c3164",
+        "canonical_name": "machine learning",
+        "source_type": "ENTITY"
+      },
+      "target": {
+        "entity_id": "kb_ent_bottleneck_00a69c5e2c03",
+        "canonical_name": "computational cost",
+        "target_type": "ENTITY"
+      },
+      "relation_type": "LIMITED_BY",
+      "surface_text": "Machine Learning limited by Computational Cost",
+      "start_char": 8,
+      "end_char": 1886,
+      "attribution": "AUTHOR_STATED",
+      "confidence_score": 0.86,
+      "extraction_version": "v0.4.0",
+      "original_validation_status": "VALIDATED",
+      "v0_5_1_statuses": {
+        "structural_validity": "STRUCTURALLY_VALID",
+        "evidence_support": "UNSUPPORTED",
+        "human_verification": "PENDING"
+      },
+      "correction_reason": "Cartesian product table artifact: Subject 'machine learning' belongs to table item 1 whereas Object 'computational cost' belongs to table item 7 in chunk chk_rg_doi_ebe643c2b3dd_A_0135. Cited evidence contains a multi-row summary table; cross-row pairing is unsupported by evidence.",
+      "provenance": {
+        "canonical_id": "rg_doi_ebe643c2b3dd",
+        "document_id": "doc_rg_doi_ebe643c2b3dd",
+        "chunk_id": "chk_rg_doi_ebe643c2b3dd_A_0135",
+        "section_id": "sec_rg_doi_ebe643c2b3dd_12",
+        "section_title": "Key Function",
+        "section_level": 2,
+        "page_start": 27,
+        "page_end": 27,
+        "file_hash": "7b75d2bd81d4e16221eded4a3970aa2bead1a967131d310316b371c02a7a076f"
+      }
+    }
+  ]
+}

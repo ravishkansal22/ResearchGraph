@@ -28,8 +28,8 @@ def test_knowledge_base_pipeline_end_to_end(tmp_path: Path) -> None:
     manifest = pipeline.run()
 
     # Verify manifest properties
-    assert manifest.kb_version == "v0.5.0"
-    assert manifest.schema_version == "0.5.0"
+    assert manifest.kb_version == config.kb_version
+    assert manifest.schema_version == config.schema_version
     assert manifest.total_papers_count > 0
     assert manifest.total_canonical_entities_count > 0
     assert manifest.total_entity_mentions_count > 0

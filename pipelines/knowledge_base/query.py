@@ -16,8 +16,16 @@ from typing import Any, Dict, List, Optional
 class KnowledgeBaseQueryEngine:
     """Relational structured query interface over the persisted SQLite knowledge base."""
 
-    def __init__(self, db_path: Path | str = "dataset/processed/v0.5.0/knowledge_base.db"):
-        self.db_path = Path(db_path)
+    def __init__(self, db_path: Optional[Path | str] = None):
+        if db_path is None:
+            # Check v0.5.1 first, then fallback to v0.5.0
+            if Path("dataset/processed/v0.5.1/knowledge_base.db").exists():
+                self.db_path = Path("dataset/processed/v0.5.1/knowledge_base.db")
+            else:
+                self.db_path = Path("dataset/processed/v0.5.0/knowledge_base.db")
+        else:
+            self.db_path = Path(db_path)
+            
         if not self.db_path.exists():
             raise FileNotFoundError(f"Knowledge base SQLite database not found at {self.db_path}")
 
@@ -26,6 +34,13 @@ class KnowledgeBaseQueryEngine:
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row
         return conn
+
+    def _has_column(self, conn: sqlite3.Connection, table_name: str, column_name: str) -> bool:
+        """Check if a table contains a specific column."""
+        cur = conn.cursor()
+        cur.execute(f"PRAGMA table_info({table_name})")
+        columns = [row["name"] for row in cur.fetchall()]
+        return column_name in columns
 
     def get_paper(self, paper_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve a paper by canonical paper ID."""
@@ -134,8 +149,22 @@ class KnowledgeBaseQueryEngine:
                 "relationships": relationships,
             }
 
-    def find_methods_for_problem(self, problem_query: str) -> List[Dict[str, Any]]:
-        """Find methods associated with a specified problem via verified semantic relationships."""
+    def find_methods_for_problem(
+        self,
+        problem_query: str,
+        trusted_only: bool = True,
+        include_unsupported: bool = False,
+        evidence_support: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Find methods associated with a specified problem via semantic relationships.
+        
+        Args:
+            problem_query: Query string to match against problem entity names/aliases.
+            trusted_only: When True (default), strictly requires evidence_support == 'SUPPORTED'.
+                          Excludes 'UNSUPPORTED', 'AMBIGUOUS', and 'NOT_ASSESSED'.
+            include_unsupported: If True, bypasses trusted_only and includes unsupported records.
+            evidence_support: Explicit evidence support status to filter on (e.g. 'UNSUPPORTED').
+        """
         norm_query = problem_query.strip().lower()
         with self._get_connection() as conn:
             cur = conn.cursor()
@@ -154,61 +183,133 @@ class KnowledgeBaseQueryEngine:
             if not problem_entities:
                 return []
 
+            has_es = self._has_column(conn, "relationships", "evidence_support")
+
             results = []
             for prob in problem_entities:
                 prob_id = prob["entity_id"]
                 prob_name = prob["canonical_name"]
 
-                # Find relationships where problem is the target
-                cur.execute(
-                    """
-                    SELECT r.relationship_id, r.relation_type, r.source_id, r.paper_id,
-                           r.chunk_id, r.surface_text, r.evidence_text, r.attribution,
+                query_sql = """
+                    SELECT r.*,
                            e.canonical_name AS method_name, e.category AS method_category
                     FROM relationships r
                     JOIN entities e ON r.source_id = e.entity_id
                     WHERE r.target_id = ?
-                    """,
-                    (prob_id,),
-                )
+                """
+                params: List[Any] = [prob_id]
+
+                if has_es:
+                    if evidence_support:
+                        query_sql += " AND r.evidence_support = ?"
+                        params.append(evidence_support.strip().upper())
+                    elif trusted_only and not include_unsupported:
+                        query_sql += " AND r.evidence_support = 'SUPPORTED'"
+
+                cur.execute(query_sql, params)
                 for r in cur.fetchall():
-                    results.append(
-                        {
-                            "problem_id": prob_id,
-                            "problem_name": prob_name,
-                            "method_id": r["source_id"],
-                            "method_name": r["method_name"],
-                            "relation_type": r["relation_type"],
-                            "relationship_id": r["relationship_id"],
-                            "paper_id": r["paper_id"],
-                            "chunk_id": r["chunk_id"],
-                            "surface_text": r["surface_text"],
-                            "evidence_text": r["evidence_text"],
-                            "attribution": r["attribution"],
-                        }
-                    )
+                    row_dict = dict(r)
+                    if "provenance_json" in row_dict:
+                        row_dict["provenance"] = json.loads(row_dict.pop("provenance_json"))
+                    row_dict["problem_id"] = prob_id
+                    row_dict["problem_name"] = prob_name
+                    results.append(row_dict)
             return results
 
-    def get_relationships_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
-        """Retrieve all incoming and outgoing semantic relationships for a given canonical entity."""
+    def get_relationships_for_entity(
+        self,
+        entity_id: str,
+        trusted_only: bool = True,
+        include_unsupported: bool = False,
+        evidence_support: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve all incoming and outgoing semantic relationships for a given canonical entity.
+        
+        Args:
+            entity_id: Canonical entity ID.
+            trusted_only: When True (default), strictly requires evidence_support == 'SUPPORTED'.
+            include_unsupported: If True, bypasses trusted_only.
+            evidence_support: Explicit evidence support status filter.
+        """
         with self._get_connection() as conn:
             cur = conn.cursor()
-            cur.execute(
-                """
+            has_es = self._has_column(conn, "relationships", "evidence_support")
+
+            query_sql = """
                 SELECT r.*,
                        s.canonical_name AS source_name,
                        t.canonical_name AS target_name
                 FROM relationships r
                 LEFT JOIN entities s ON r.source_id = s.entity_id
                 LEFT JOIN entities t ON r.target_id = t.entity_id
-                WHERE r.source_id = ? OR r.target_id = ?
+                WHERE (r.source_id = ? OR r.target_id = ?)
+            """
+            params: List[Any] = [entity_id, entity_id]
+
+            if has_es:
+                if evidence_support:
+                    query_sql += " AND r.evidence_support = ?"
+                    params.append(evidence_support.strip().upper())
+                elif trusted_only and not include_unsupported:
+                    query_sql += " AND r.evidence_support = 'SUPPORTED'"
+
+            cur.execute(query_sql, params)
+            results = []
+            for r in cur.fetchall():
+                d = dict(r)
+                if "provenance_json" in d:
+                    d["provenance"] = json.loads(d.pop("provenance_json"))
+                results.append(d)
+            return results
+
+    def get_excluded_relationships(
+        self,
+        reason: Optional[str] = None,
+        evidence_support: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve excluded/unsupported relationships for diagnostic audit.
+        
+        Returns relationships where evidence_support is not 'SUPPORTED' (e.g. 'UNSUPPORTED',
+        'AMBIGUOUS', 'NOT_ASSESSED'), along with entity names, provenance, and diagnostic notes.
+        """
+        with self._get_connection() as conn:
+            has_es = self._has_column(conn, "relationships", "evidence_support")
+            if not has_es:
+                return []
+            cur = conn.cursor()
+            clauses = []
+            params: List[Any] = []
+            if evidence_support:
+                clauses.append("r.evidence_support = ?")
+                params.append(evidence_support.strip().upper())
+            else:
+                clauses.append("r.evidence_support != 'SUPPORTED'")
+
+            if reason:
+                clauses.append("r.correction_notes LIKE ?")
+                params.append(f"%{reason}%")
+
+            where_sql = f"WHERE {' AND '.join(clauses)}"
+            cur.execute(
+                f"""
+                SELECT r.*,
+                       s.canonical_name AS source_name,
+                       t.canonical_name AS target_name
+                FROM relationships r
+                LEFT JOIN entities s ON r.source_id = s.entity_id
+                LEFT JOIN entities t ON r.target_id = t.entity_id
+                {where_sql}
+                ORDER BY r.relationship_id ASC
+                LIMIT ?
                 """,
-                (entity_id, entity_id),
+                (*params, limit),
             )
             results = []
             for r in cur.fetchall():
                 d = dict(r)
-                d["provenance"] = json.loads(d.pop("provenance_json"))
+                if "provenance_json" in d:
+                    d["provenance"] = json.loads(d.pop("provenance_json"))
                 results.append(d)
             return results
 
@@ -250,9 +351,12 @@ class KnowledgeBaseQueryEngine:
         self,
         extractor_version: Optional[str] = None,
         validation_status: Optional[str] = None,
+        structural_validity: Optional[str] = None,
+        evidence_support: Optional[str] = None,
+        human_verification: Optional[str] = None,
         limit: int = 100,
     ) -> Dict[str, Any]:
-        """Filter mentions, statements, and relationships by extractor version or validation status."""
+        """Filter mentions, statements, and relationships by extractor version or validation statuses."""
         with self._get_connection() as conn:
             cur = conn.cursor()
             clauses = []
@@ -280,10 +384,25 @@ class KnowledgeBaseQueryEngine:
             )
             statements = [dict(r) for r in cur.fetchall()]
 
-            # Relationships
+            # Relationships: can also filter by structural_validity, evidence_support, human_verification
+            rel_clauses = list(clauses)
+            rel_params = list(params)
+            has_sv = self._has_column(conn, "relationships", "structural_validity")
+            if has_sv:
+                if structural_validity:
+                    rel_clauses.append("structural_validity = ?")
+                    rel_params.append(structural_validity.strip().upper())
+                if evidence_support:
+                    rel_clauses.append("evidence_support = ?")
+                    rel_params.append(evidence_support.strip().upper())
+                if human_verification:
+                    rel_clauses.append("human_verification = ?")
+                    rel_params.append(human_verification.strip().upper())
+
+            rel_where = f"WHERE {' AND '.join(rel_clauses)}" if rel_clauses else ""
             cur.execute(
-                f"SELECT * FROM relationships {where_sql} LIMIT ?",
-                (*params, limit),
+                f"SELECT * FROM relationships {rel_where} LIMIT ?",
+                (*rel_params, limit),
             )
             relationships = [dict(r) for r in cur.fetchall()]
 
@@ -291,6 +410,9 @@ class KnowledgeBaseQueryEngine:
                 "filter_criteria": {
                     "extractor_version": extractor_version,
                     "validation_status": validation_status,
+                    "structural_validity": structural_validity,
+                    "evidence_support": evidence_support,
+                    "human_verification": human_verification,
                 },
                 "mentions": mentions,
                 "statements": statements,
