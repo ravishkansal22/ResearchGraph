@@ -1,0 +1,142 @@
+{
+  "audit_metadata": {
+    "audit_version": "v0.5.0-audit",
+    "kb_version": "v0.5.0",
+    "schema_version": "0.5.0",
+    "timestamp": "2026-10-19T05:57:08.914832+00:00",
+    "auditor": "Senior Research Engineer & Scientific Knowledge Representation Architect",
+    "audit_verdict": "PASS WITH CAVEATS"
+  },
+  "count_reconciliation_table": [
+    {
+      "extractor_version": "v0.4.0",
+      "source_record_type": "ENTITY_MENTION",
+      "input_count": 174,
+      "accepted_count": 174,
+      "duplicate_count": 0,
+      "rejected_quarantined_count": 0,
+      "persisted_mentions_count": 174,
+      "notes": "Base extractions loaded first; 0 intra-v0.4.0 duplicates"
+    },
+    {
+      "extractor_version": "v0.4.0",
+      "source_record_type": "SCIENTIFIC_STATEMENT",
+      "input_count": 5,
+      "accepted_count": 5,
+      "duplicate_count": 0,
+      "rejected_quarantined_count": 0,
+      "persisted_statements_count": 5,
+      "notes": "1 CLAIM + 4 FUTURE_DIRECTION records"
+    },
+    {
+      "extractor_version": "v0.4.0",
+      "source_record_type": "SCIENTIFIC_RELATIONSHIP",
+      "input_count": 12,
+      "accepted_count": 9,
+      "duplicate_count": 3,
+      "rejected_quarantined_count": 0,
+      "persisted_relationships_count": 9,
+      "notes": "3 relationships collapsed as duplicate canonical pairs within chunk 135"
+    },
+    {
+      "extractor_version": "v0.4.1",
+      "source_record_type": "ENTITY_MENTION",
+      "input_count": 205,
+      "accepted_count": 93,
+      "duplicate_count": 112,
+      "rejected_quarantined_count": 0,
+      "persisted_mentions_count": 93,
+      "notes": "112 mentions matched v0.4.0 exactly (same chunk, category, offsets) and were deduplicated"
+    },
+    {
+      "extractor_version": "v0.4.1",
+      "source_record_type": "SCIENTIFIC_STATEMENT",
+      "input_count": 21,
+      "accepted_count": 17,
+      "duplicate_count": 4,
+      "rejected_quarantined_count": 0,
+      "persisted_statements_count": 17,
+      "notes": "4 statements matched v0.4.0 exactly; 1 v0.4.0 compound statement was split into 4 in v0.4.1"
+    },
+    {
+      "extractor_version": "v0.4.1",
+      "source_record_type": "SCIENTIFIC_RELATIONSHIP",
+      "input_count": 0,
+      "accepted_count": 0,
+      "duplicate_count": 0,
+      "rejected_quarantined_count": 0,
+      "persisted_relationships_count": 0,
+      "notes": "v0.4.1 extracted_relationships.jsonl is 0 bytes (experimental relationships deferred)"
+    },
+    {
+      "extractor_version": "Phase 1 (v0.1.0)",
+      "source_record_type": "CANONICAL_PAPER",
+      "input_count": 528,
+      "accepted_count": 528,
+      "duplicate_count": 0,
+      "rejected_quarantined_count": 0,
+      "persisted_papers_count": 528,
+      "notes": "Canonical literature records indexed with stable IDs"
+    },
+    {
+      "extractor_version": "Combined (v0.5.0)",
+      "source_record_type": "SUMMARY_TOTALS",
+      "input_count": 417,
+      "accepted_count": 298,
+      "duplicate_count": 119,
+      "rejected_quarantined_count": 0,
+      "persisted_canonical_nodes": {
+        "canonical_papers": 528,
+        "canonical_entities": 68,
+        "entity_mentions": 267,
+        "canonical_statements": 22,
+        "canonical_relationships": 9,
+        "quarantined_records": 0
+      },
+      "notes": "Total inputs: 405 extractions + 12 relationships = 417. Total accepted: 267 mentions + 22 stmts + 9 rels = 298. Total duplicates: 112 mentions + 4 stmts + 3 rels = 119. 298 + 119 = 417."
+    }
+  ],
+  "provenance_offset_audit": {
+    "chunks_indexed": 3582,
+    "mentions_tested": 267,
+    "mentions_exact_matches": 267,
+    "mentions_mismatches": 0,
+    "statements_tested": 22,
+    "statements_exact_matches": 22,
+    "statements_mismatches": 0,
+    "relationships_tested": 9,
+    "relationships_exact_matches": 9,
+    "relationships_mismatches": 0,
+    "offset_integrity_pass_rate": 1.0
+  },
+  "storage_parity_audit": {
+    "jsonl_parquet_sqlite_parity": {
+      "papers": true,
+      "entities": true,
+      "entity_mentions": true,
+      "statements": true,
+      "relationships": true
+    },
+    "foreign_key_violations": 0,
+    "duplicate_key_rejection": true,
+    "foreign_key_enforcement": true
+  },
+  "discrepancies": [
+    {
+      "id": "DISC-01",
+      "severity": "LOW (Documentation / Clerical)",
+      "description": "Typographical / clerical count conflation in Phase 4 summary report narrative text.",
+      "evidence": "Report narrative stated 'Entity Mentions: 405 (174 v0.4.0 + 203 v0.4.1)' and 'Scientific Statements: 32 (5 v0.4.0 + 23 v0.4.1)'. The number 405 is actually the total combined extraction records across both files (379 entities + 26 statements = 405). Actual entities raw: 379 (174 + 205). Actual statements raw: 26 (5 + 21).",
+      "impact": "Zero impact on data, schemas, database, or snapshots. Purely narrative table formatting discrepancy in summary text.",
+      "recommended_correction": "Update summary report table to distinguish Total Raw Extraction Inputs (405) from Raw Entity Mentions (379) and Raw Statements (26)."
+    },
+    {
+      "id": "DISC-02",
+      "severity": "MEDIUM (Scientific Entailment Caveat)",
+      "description": "Phase 3 v0.4.0 relationships originate from a Cartesian product over a summary table in chunk 135 rather than true semantic entailment.",
+      "evidence": "In chunk chk_rg_doi_ebe643c2b3dd_A_0135, table rows associate Federated Learning with Data Privacy Concerns (row 3) and Ensemble Learning with False Negatives (row 9). v0.4.0's rule-based extractor cross-paired Federated Learning and Ensemble Learning with Data Imbalance (row 6) and anomaly detection (row 17) across the entire chunk span [8:1886].",
+      "impact": "Mechanical provenance and character spans are 100% valid, but semantic validity is an artifact of upstream rule-based co-occurrence extraction.",
+      "recommended_correction": "Preserve records as extracted with AttributionType.AUTHOR_STATED and extraction_version='v0.4.0', but clearly document that query results for these edges reflect unvalidated baseline extractor behavior until human benchmark evaluation."
+    }
+  ]
+}
