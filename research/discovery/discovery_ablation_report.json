@@ -1,0 +1,62 @@
+{
+  "full_model": {
+    "candidate_count": 5,
+    "top_candidate": "healthcare",
+    "top_score": 0.5625,
+    "scores": [
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625
+    ]
+  },
+  "ablation_no_distance": {
+    "candidate_count": 5,
+    "top_candidate": "healthcare",
+    "top_score": 0.4825,
+    "scores": [
+      0.4825,
+      0.4825,
+      0.4825,
+      0.4825,
+      0.4825
+    ]
+  },
+  "ablation_no_redundancy_penalty": {
+    "candidate_count": 5,
+    "top_candidate": "healthcare",
+    "top_score": 0.5625,
+    "scores": [
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625
+    ]
+  },
+  "ablation_no_evidence": {
+    "candidate_count": 5,
+    "top_candidate": "healthcare",
+    "top_score": 0.6875,
+    "scores": [
+      0.6875,
+      0.6875,
+      0.6875,
+      0.6875,
+      0.6875
+    ]
+  },
+  "ablation_no_contradiction": {
+    "candidate_count": 5,
+    "top_candidate": "healthcare",
+    "top_score": 0.5625,
+    "scores": [
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625,
+      0.5625
+    ]
+  }
+}

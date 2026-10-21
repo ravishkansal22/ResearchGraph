@@ -1,0 +1,139 @@
+{
+  "timestamp": "2026-10-21T14:52:36Z",
+  "corpus_subset_chunks": 500,
+  "total_benchmark_queries": 8,
+  "model_spec": {
+    "model_name": "tfidf-lsa-384",
+    "category": "DETERMINISTIC_LSA",
+    "dimension": 384,
+    "revision": "v1.0",
+    "max_seq_length": 1024,
+    "requires_query_instruction": false,
+    "query_instruction": "",
+    "license": "MIT",
+    "memory_mb_est": 25.0,
+    "description": "Deterministic, reproducible Latent Semantic Analysis baseline on TF-IDF representation."
+  },
+  "summary_metrics": {
+    "bm25": {
+      "p@5": 0.6,
+      "r@5": 0.1632,
+      "ndcg@5": 0.6979,
+      "p@10": 0.575,
+      "r@10": 0.3188,
+      "ndcg@10": 0.7985,
+      "mrr": 0.8073,
+      "latency_ms": 2.5299
+    },
+    "dense_vector": {
+      "p@5": 0.55,
+      "r@5": 0.1764,
+      "ndcg@5": 0.6528,
+      "p@10": 0.4875,
+      "r@10": 0.2807,
+      "ndcg@10": 0.7467,
+      "mrr": 0.6701,
+      "latency_ms": 5.1245
+    },
+    "hybrid_rrf": {
+      "p@5": 0.6,
+      "r@5": 0.1842,
+      "ndcg@5": 0.7187,
+      "p@10": 0.525,
+      "r@10": 0.299,
+      "ndcg@10": 0.7929,
+      "mrr": 0.747,
+      "latency_ms": 7.1956
+    }
+  },
+  "per_query_details": [
+    {
+      "query_id": "q01",
+      "query_text": "federated learning privacy data concerns distributed networks",
+      "total_relevant": 47,
+      "bm25_p10": 1.0,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 1.0,
+      "dense_vector_mrr": 1.0,
+      "hybrid_rrf_p10": 1.0,
+      "hybrid_rrf_mrr": 1.0
+    },
+    {
+      "query_id": "q02",
+      "query_text": "convolutional neural network image classification oncology healthcare",
+      "total_relevant": 12,
+      "bm25_p10": 0.8,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 0.7,
+      "dense_vector_mrr": 1.0,
+      "hybrid_rrf_p10": 0.8,
+      "hybrid_rrf_mrr": 1.0
+    },
+    {
+      "query_id": "q03",
+      "query_text": "prompt injection vulnerabilities in large language models",
+      "total_relevant": 3,
+      "bm25_p10": 0.1,
+      "bm25_mrr": 0.125,
+      "dense_vector_p10": 0.1,
+      "dense_vector_mrr": 0.111,
+      "hybrid_rrf_p10": 0.1,
+      "hybrid_rrf_mrr": 0.143
+    },
+    {
+      "query_id": "q04",
+      "query_text": "mitigating data imbalance using synthetic data generation generative models",
+      "total_relevant": 5,
+      "bm25_p10": 0.2,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 0.2,
+      "dense_vector_mrr": 1.0,
+      "hybrid_rrf_p10": 0.2,
+      "hybrid_rrf_mrr": 1.0
+    },
+    {
+      "query_id": "q05",
+      "query_text": "computational cost constraints and memory bottlenecks edge AI deployment",
+      "total_relevant": 54,
+      "bm25_p10": 0.9,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 1.0,
+      "dense_vector_mrr": 1.0,
+      "hybrid_rrf_p10": 1.0,
+      "hybrid_rrf_mrr": 1.0
+    },
+    {
+      "query_id": "q06",
+      "query_text": "mental health automated assessment using natural language processing",
+      "total_relevant": 4,
+      "bm25_p10": 0.1,
+      "bm25_mrr": 0.333,
+      "dense_vector_p10": 0.1,
+      "dense_vector_mrr": 0.25,
+      "hybrid_rrf_p10": 0.1,
+      "hybrid_rrf_mrr": 0.333
+    },
+    {
+      "query_id": "q07",
+      "query_text": "adversarial robustness and attack resilience in deep learning models",
+      "total_relevant": 32,
+      "bm25_p10": 1.0,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 0.5,
+      "dense_vector_mrr": 0.5,
+      "hybrid_rrf_p10": 0.7,
+      "hybrid_rrf_mrr": 1.0
+    },
+    {
+      "query_id": "q08",
+      "query_text": "clinical decision support systems predictive analytics patient outcomes",
+      "total_relevant": 24,
+      "bm25_p10": 0.5,
+      "bm25_mrr": 1.0,
+      "dense_vector_p10": 0.3,
+      "dense_vector_mrr": 0.5,
+      "hybrid_rrf_p10": 0.3,
+      "hybrid_rrf_mrr": 0.5
+    }
+  ]
+}

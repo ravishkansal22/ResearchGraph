@@ -1,0 +1,126 @@
+{
+  "evaluation_version": "v1.0.0",
+  "timestamp_utc": "2026-10-21T15:20:16.109451+00:00",
+  "total_latency_seconds": 11.06,
+  "corpus": {
+    "papers_catalog": 50,
+    "processed_chunks": 3582,
+    "extraction_pilot_chunks": 75,
+    "knowledge_base_db": "v0.5.1"
+  },
+  "retrieval_evaluation": {
+    "status": "COMPLETED",
+    "num_corpus_chunks_indexed": 500,
+    "num_queries_evaluated": 5,
+    "mean_lexical_latency_ms": 1.822,
+    "mean_dense_latency_ms": 6.268,
+    "mean_hybrid_latency_ms": 8.15,
+    "mean_overlap_at_5": 0.39
+  },
+  "graph_evaluation": {
+    "status": "COMPLETED",
+    "total_nodes": 618,
+    "total_edges": 31,
+    "trusted_edges": 22,
+    "unsupported_cartesian_edges": 9,
+    "unsupported_edge_filtering_verified": true,
+    "referential_integrity_violations": 0,
+    "diagnostic_subgraph_edges": 31
+  },
+  "discovery_evaluation": {
+    "status": "COMPLETED",
+    "problems_evaluated": 3,
+    "total_candidates_generated": 15,
+    "strategies_represented": [
+      "PROBLEM_TO_METHOD"
+    ],
+    "ablation_study": {
+      "full_scoring_mean": 0.825,
+      "no_cross_domain_distance_mean": 0.745,
+      "no_contradiction_penalty_mean": 0.825,
+      "cross_domain_delta": 0.08,
+      "contradiction_penalty_delta": 0.0
+    }
+  },
+  "gap_verification_evaluation": {
+    "status": "COMPLETED",
+    "benchmark_cases_evaluated": 3,
+    "false_novelty_prevention_rate": 1.0,
+    "case_summaries": [
+      {
+        "proposed_gap": "prompt injection defenses in large language models...",
+        "status": "POSSIBLE_GAP",
+        "supporting_papers": 1,
+        "precedent_papers": 0,
+        "audit_trail_events": 3,
+        "coverage_limitations_stated": true
+      },
+      {
+        "proposed_gap": "federated learning clinical oncology institutional...",
+        "status": "POSSIBLE_GAP",
+        "supporting_papers": 2,
+        "precedent_papers": 0,
+        "audit_trail_events": 3,
+        "coverage_limitations_stated": true
+      },
+      {
+        "proposed_gap": "quantum-gravity unified lattice simulation on neur...",
+        "status": "POSSIBLE_GAP",
+        "supporting_papers": 2,
+        "precedent_papers": 0,
+        "audit_trail_events": 3,
+        "coverage_limitations_stated": true
+      }
+    ]
+  },
+  "negative_knowledge_evaluation": {
+    "status": "COMPLETED",
+    "total_negative_knowledge_records": 7,
+    "bottlenecks_retrieved": 2,
+    "failed_approaches_for_fl": 1,
+    "fl_contradiction_risk_score": 0.0,
+    "fl_contradictions_identified": 0
+  },
+  "hypothesis_and_review_evaluation": {
+    "status": "COMPLETED",
+    "hypotheses_evaluated": 3,
+    "verdict_distribution": {
+      "PROMISING_BUT_UNVERIFIED": 3
+    },
+    "cases": [
+      {
+        "hypothesis_id": "hyp_923a71c8087d",
+        "independent_variables_count": 3,
+        "dependent_variables_count": 3,
+        "falsification_criteria_count": 340,
+        "review_verdict": "PROMISING_BUT_UNVERIFIED",
+        "reviewer_weaknesses_count": 1,
+        "experiment_protocol_steps": 8,
+        "rejection_criteria_explicit": true,
+        "status": "PLANNED_READY_FOR_EXECUTION"
+      },
+      {
+        "hypothesis_id": "hyp_e2ad78d1a284",
+        "independent_variables_count": 3,
+        "dependent_variables_count": 3,
+        "falsification_criteria_count": 357,
+        "review_verdict": "PROMISING_BUT_UNVERIFIED",
+        "reviewer_weaknesses_count": 2,
+        "experiment_protocol_steps": 8,
+        "rejection_criteria_explicit": true,
+        "status": "PLANNED_READY_FOR_EXECUTION"
+      },
+      {
+        "hypothesis_id": "hyp_3e0391b0b140",
+        "independent_variables_count": 3,
+        "dependent_variables_count": 3,
+        "falsification_criteria_count": 346,
+        "review_verdict": "PROMISING_BUT_UNVERIFIED",
+        "reviewer_weaknesses_count": 1,
+        "experiment_protocol_steps": 8,
+        "rejection_criteria_explicit": true,
+        "status": "PLANNED_READY_FOR_EXECUTION"
+      }
+    ]
+  }
+}

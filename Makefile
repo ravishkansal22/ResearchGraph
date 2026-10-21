@@ -61,3 +61,19 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	find . -type d -name ".ruff_cache" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+
+test-all:
+	$(PYTHON) -m pytest tests/ backend/tests/ -v
+
+run-server:
+	$(PYTHON) -m uvicorn researchgraph.api.main:app --reload --host 0.0.0.0 --port 8000
+
+eval-retrieval:
+	$(PYTHON) research/embeddings/eval_retrieval.py
+
+eval-discovery:
+	$(PYTHON) pipelines/discovery/ablation.py
+
+eval-continuous:
+	$(PYTHON) scripts/run_continuous_evaluation.py
+
