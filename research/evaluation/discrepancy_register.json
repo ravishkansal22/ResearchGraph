@@ -1,0 +1,86 @@
+{
+  "audit_version": "v1.0.0",
+  "audit_timestamp_utc": "2026-10-21T15:52:00Z",
+  "auditor": "Independent Principal Research Engineer",
+  "scope": "Phases 5-13 and Phase 15 Backend Implementation",
+  "total_discrepancies": 7,
+  "discrepancies": [
+    {
+      "id": "DISC-001",
+      "phase": "Phase 2 & 5 Data Ingestion",
+      "title": "Version and Chunk Count Conflation (v0.2.0 vs v0.3.0)",
+      "severity": "MAJOR",
+      "category": "Dataset Inconsistency",
+      "reported_claim": "v0.2.0 contains 3,582 chunks from 50 canonical papers.",
+      "actual_fact": "dataset/processed/v0.2.0/chunks.parquet contains 719 chunks from 8 pilot documents. dataset/processed/v0.3.0/chunks.parquet contains 3,582 chunks from 50 documents. v0.1.0 canonical_papers.parquet contains 528 metadata papers, while 50 papers have processed full text.",
+      "impact": "Code referencing v0.2.0 was querying the 8-paper pilot corpus (719 chunks) rather than the full 50-paper expansion corpus (3,582 chunks).",
+      "remediation_status": "IDENTIFIED_FOR_CORRECTIVE_RELEASE"
+    },
+    {
+      "id": "DISC-002",
+      "phase": "Phase 6 Research Graph",
+      "title": "Trusted Edge Conflation (Document Containment vs Scientific Relationships)",
+      "severity": "CRITICAL",
+      "category": "Epistemic Conflation",
+      "reported_claim": "Graph contains 618 nodes, 31 total edges, and 22 trusted edges, while 9 Cartesian edges are isolated as unsupported.",
+      "actual_fact": "All 22 'trusted edges' are Paper -> CONTAINS -> Statement structural containment edges. The only 9 concept-to-concept relationship edges in v0.5.1 are the 9 Cartesian-product table relationships from chunk chk_rg_doi_ebe643c2b3dd_A_0135, all marked UNSUPPORTED. There are exactly 0 trusted semantic relationships in the graph.",
+      "impact": "The research graph contains zero trusted scientific concept relationships; traversal relies entirely on lexical/hybrid retrieval rather than trusted graph edges.",
+      "remediation_status": "IDENTIFIED_FOR_CORRECTIVE_RELEASE"
+    },
+    {
+      "id": "DISC-003",
+      "phase": "Phase 9 Negative Knowledge",
+      "title": "Ingestion of Unsupported Cartesian Relationships into Dead-End Graveyard",
+      "severity": "MAJOR",
+      "category": "Data Leakage / Validation Bypass",
+      "reported_claim": "The 9 Cartesian-product relationships are marked unsupported and strictly excluded from trusted discovery by default.",
+      "actual_fact": "DeadEndGraveyard.build_index() queries 'SELECT * FROM relationships WHERE relation_type IN (\"LIMITED_BY\", \"CONTRADICTS\")' without filtering by evidence_support == 'SUPPORTED'. Consequently, 3 of the 7 negative knowledge records (neg_rel_kb_rel_9eacb770b891, neg_rel_kb_rel_bf57d03902f7, neg_rel_kb_rel_c043dbedbb58) are derived directly from the unverified Cartesian artifact chunk chk_rg_doi_ebe643c2b3dd_A_0135.",
+      "impact": "Unsupported negative relationships were inadvertently ingested into the dead-end risk assessment index.",
+      "remediation_status": "IDENTIFIED_FOR_CORRECTIVE_RELEASE"
+    },
+    {
+      "id": "DISC-004",
+      "phase": "Phase 5 & 15 Retrieval Evaluation",
+      "title": "Synthetic / Rule-Based Relevance Ground Truth Described as Benchmark",
+      "severity": "MAJOR",
+      "category": "Evaluation Validity",
+      "reported_claim": "Empirical retrieval evaluation benchmark measuring Precision@k, Recall@k, MRR, nDCG@k across BM25, Dense Vector, and Hybrid RRF.",
+      "actual_fact": "Relevance ground truth is computed by a rule-based term-matching heuristic (is_relevant: target concept in text OR >=2 keyword overlap). No human relevance judgments were collected. This introduces structural bias favoring lexical matching.",
+      "impact": "Retrieval metrics reflect lexical keyword overlap rather than human-evaluated scientific semantic relevance.",
+      "remediation_status": "IDENTIFIED_FOR_CORRECTIVE_RELEASE"
+    },
+    {
+      "id": "DISC-005",
+      "phase": "Phase 7 Cross-Domain Discovery",
+      "title": "Ablation Delta is an Arithmetic Artifact of Discrete Weighting",
+      "severity": "MAJOR",
+      "category": "Evaluation Validity",
+      "reported_claim": "Ablation study proved that cross-domain distance provides a +0.0800 ranking advantage for non-obvious transfer.",
+      "actual_fact": "In scorer.py, when cross-domain distance is enabled and domains differ, s_dist is assigned 0.90. When disabled, s_dist is assigned 0.50. With weight_distance = 0.20, the delta is identically (0.90 - 0.50) * 0.20 = 0.0800. This is an algebraic property of the formula, not an empirical discovery metric.",
+      "impact": "Ablation reflects mathematical formula mechanics rather than measured scientific discovery quality.",
+      "remediation_status": "IDENTIFIED_FOR_CORRECTIVE_RELEASE"
+    },
+    {
+      "id": "DISC-006",
+      "phase": "Phase 8 Research-Gap Verification",
+      "title": "False-Novelty Prevention is an Architectural Invariant, External Search is Stubbed",
+      "severity": "MINOR",
+      "category": "Claim Precision",
+      "reported_claim": "100% false-novelty prevention rate demonstrated across benchmark test cases.",
+      "actual_fact": "The GapStatus enum does not contain a VERIFIED_NOVEL member (only POSSIBLE_GAP, EVIDENCE_AGAINST_GAP, INSUFFICIENT_EVIDENCE, REQUIRES_REVIEW). The verifier cannot output novel by design. External search adapters do not execute live HTTP requests to OpenAlex/arXiv; they return recommended query strings.",
+      "impact": "The prevention rate is an invariant guarantee, not a statistical benchmark finding. External search is recommended, not live.",
+      "remediation_status": "DOCUMENTED_AS_DESIGN_INVARIANT"
+    },
+    {
+      "id": "DISC-007",
+      "phase": "Phase 11 & 12 Hypotheses & Reviewer #2",
+      "title": "Reviewer #2 is Purely Rule-Based; Experiment Designer Plans are Pre-Registrations",
+      "severity": "MINOR",
+      "category": "Claim Precision",
+      "reported_claim": "Hypotheses critically evaluated by Adversarial Reviewer; executable experiment plans designed.",
+      "actual_fact": "AdversarialReviewer is a deterministic heuristic evaluating evidence excerpt counts, baseline keywords, and non-iid parameter strings. Zero LLM calls are made. Experiment plans are pre-registration specifications with execution_status='PLANNED_READY_FOR_EXECUTION', not executed laboratory experiments.",
+      "impact": "Scientific validity of generated hypotheses is unverified by human peer reviewers.",
+      "remediation_status": "DOCUMENTED_AS_DESIGN_INVARIANT"
+    }
+  ]
+}
