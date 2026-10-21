@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
+from typing import Any
+
 from fastapi import APIRouter
+from pipelines.embeddings.models import MODEL_REGISTRY
 
 from researchgraph.core.config import settings
 from researchgraph.schemas.api import HealthResponse, VersionsResponse
-from pipelines.embeddings.models import MODEL_REGISTRY
 
 router = APIRouter(tags=["System & Health"])
 

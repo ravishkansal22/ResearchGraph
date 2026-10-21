@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from fastapi import APIRouter, Depends
-
-from researchgraph.schemas.api import GapVerificationRequest
 from pipelines.gap_verification.schema import ResearchGapDossier
 from pipelines.gap_verification.verifier import ResearchGapVerifier
 
+from researchgraph.schemas.api import GapVerificationRequest
+
 router = APIRouter(prefix="/gap-verification", tags=["Research-Gap Verification"])
 
-_verifier: Optional[ResearchGapVerifier] = None
+_verifier: ResearchGapVerifier | None = None
 
 
 def get_gap_verifier() -> ResearchGapVerifier:

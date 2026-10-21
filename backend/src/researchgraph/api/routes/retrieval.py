@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends
+from typing import Any
+
 import pyarrow.parquet as pq
+from fastapi import APIRouter, Depends
+from pipelines.embeddings.bm25 import BM25Index
+from pipelines.embeddings.models import get_encoder
+from pipelines.embeddings.pipeline import RepresentationType
+from pipelines.embeddings.retrieval import DenseVectorIndex, ScientificRetrievalEngine
 
 from researchgraph.core.config import settings
 from researchgraph.schemas.api import (
@@ -13,14 +18,10 @@ from researchgraph.schemas.api import (
     RetrievalRequest,
     RetrievalResponse,
 )
-from pipelines.embeddings.bm25 import BM25Index
-from pipelines.embeddings.models import get_encoder
-from pipelines.embeddings.pipeline import EmbeddingPipeline, RepresentationType
-from pipelines.embeddings.retrieval import DenseVectorIndex, ScientificRetrievalEngine
 
 router = APIRouter(prefix="/retrieval", tags=["Semantic Retrieval"])
 
-_retrieval_engine: Optional[ScientificRetrievalEngine] = None
+_retrieval_engine: ScientificRetrievalEngine | None = None
 
 
 def get_retrieval_engine() -> ScientificRetrievalEngine:
@@ -31,7 +32,6 @@ def get_retrieval_engine() -> ScientificRetrievalEngine:
         chunks_path = settings.chunks_parquet_path
         encoder = get_encoder(model_name_or_key=settings.embedding_model_key)
 
-        records = []
         if chunks_path.exists():
             table = pq.read_table(str(chunks_path))
             n = min(300, table.num_rows)
@@ -39,22 +39,18 @@ def get_retrieval_engine() -> ScientificRetrievalEngine:
             texts = table["text"].to_pylist()[:n]
             pids = table["canonical_id"].to_pylist()[:n]
 
-            for cid, txt, pid in zip(cids, texts, pids):
+            for cid, txt, pid in zip(cids, texts, pids, strict=False):
                 bm25.add_document(cid, txt, metadata={"paper_id": pid})
 
             bm25.build()
-            encoder.fit(texts)
+            if hasattr(encoder, "fit"):
+                encoder.fit(texts)
             vecs = encoder.encode(texts)
-
-            for cid, txt, pid, vec in zip(cids, texts, pids, vecs):
-                records.append(
-                    EmbeddingPipeline().encoder.spec and
-                    EmbeddingPipeline().generate_statement_embeddings  # just ensure module loaded
-                )
 
             dense_records = []
             from pipelines.embeddings.pipeline import EmbeddingRecord
-            for cid, txt, pid, vec in zip(cids, texts, pids, vecs):
+
+            for cid, txt, pid, vec in zip(cids, texts, pids, vecs, strict=False):
                 dense_records.append(
                     EmbeddingRecord(
                         record_id=cid,
@@ -71,7 +67,9 @@ def get_retrieval_engine() -> ScientificRetrievalEngine:
 
             dense_index = DenseVectorIndex(encoder=encoder)
             dense_index.build_from_records(dense_records)
-            _retrieval_engine = ScientificRetrievalEngine(bm25_index=bm25, dense_index=dense_index, encoder=encoder)
+            _retrieval_engine = ScientificRetrievalEngine(
+                bm25_index=bm25, dense_index=dense_index, encoder=encoder
+            )
         else:
             _retrieval_engine = ScientificRetrievalEngine()
     return _retrieval_engine
@@ -176,7 +174,7 @@ def search_hybrid(
 def compare_retrieval_strategies(
     request: RetrievalRequest,
     engine: ScientificRetrievalEngine = Depends(get_retrieval_engine),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Execute side-by-side comparison of lexical, dense, and hybrid retrieval."""
     result = engine.compare_retrieval(query=request.query, top_k=request.top_k)
     return {

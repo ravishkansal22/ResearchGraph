@@ -18,13 +18,21 @@ class KnowledgeBaseQueryEngine:
 
     def __init__(self, db_path: Optional[Path | str] = None):
         if db_path is None:
-            # Check v0.5.1 first, then fallback to v0.5.0
-            if Path("dataset/processed/v0.5.1/knowledge_base.db").exists():
-                self.db_path = Path("dataset/processed/v0.5.1/knowledge_base.db")
-            else:
-                self.db_path = Path("dataset/processed/v0.5.0/knowledge_base.db")
+            repo_root = Path(__file__).resolve().parents[2]
+            candidates = [
+                Path("dataset/processed/v0.5.1/knowledge_base.db"),
+                repo_root / "dataset/processed/v0.5.1/knowledge_base.db",
+                Path("dataset/processed/v0.5.0/knowledge_base.db"),
+                repo_root / "dataset/processed/v0.5.0/knowledge_base.db",
+            ]
+            self.db_path = next((p for p in candidates if p.exists()), candidates[0])
         else:
             self.db_path = Path(db_path)
+            if not self.db_path.exists():
+                repo_root = Path(__file__).resolve().parents[2]
+                candidate = repo_root / db_path
+                if candidate.exists():
+                    self.db_path = candidate
             
         if not self.db_path.exists():
             raise FileNotFoundError(f"Knowledge base SQLite database not found at {self.db_path}")

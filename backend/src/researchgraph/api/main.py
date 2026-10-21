@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import time
 from typing import Any
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from researchgraph.api.router import api_router
 from researchgraph.core.config import settings

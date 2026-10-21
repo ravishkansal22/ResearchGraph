@@ -2,14 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
-
-from researchgraph.schemas.api import (
-    AdversarialReviewRequest,
-    ExperimentDesignRequest,
-    HypothesisGenerateRequest,
-)
 from pipelines.experiment.designer import ExperimentDesigner
 from pipelines.experiment.schema import ExperimentPlan
 from pipelines.hypothesis.generator import HypothesisGenerationEngine
@@ -17,11 +10,17 @@ from pipelines.hypothesis.schema import ResearchHypothesis
 from pipelines.reviewer.adversarial import AdversarialReviewer
 from pipelines.reviewer.schema import AdversarialReview
 
+from researchgraph.schemas.api import (
+    AdversarialReviewRequest,
+    ExperimentDesignRequest,
+    HypothesisGenerateRequest,
+)
+
 router = APIRouter(tags=["Hypotheses, Review & Experiments"])
 
-_hypo_engine: Optional[HypothesisGenerationEngine] = None
-_reviewer: Optional[AdversarialReviewer] = None
-_exp_designer: Optional[ExperimentDesigner] = None
+_hypo_engine: HypothesisGenerationEngine | None = None
+_reviewer: AdversarialReviewer | None = None
+_exp_designer: ExperimentDesigner | None = None
 
 
 def get_hypo_engine() -> HypothesisGenerationEngine:

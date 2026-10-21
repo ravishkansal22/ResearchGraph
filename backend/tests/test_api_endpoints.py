@@ -13,7 +13,6 @@ Verifies:
 
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from researchgraph.api.main import app
@@ -21,7 +20,7 @@ from researchgraph.api.main import app
 client = TestClient(app)
 
 
-def test_root_welcome():
+def test_root_welcome() -> None:
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
@@ -29,7 +28,7 @@ def test_root_welcome():
     assert "version" in data
 
 
-def test_health_and_versions():
+def test_health_and_versions() -> None:
     res_health = client.get("/api/v1/health")
     assert res_health.status_code == 200
     health_data = res_health.json()
@@ -43,7 +42,7 @@ def test_health_and_versions():
     assert versions_data["knowledge_base_version"] == "v0.5.1"
 
 
-def test_models_registry():
+def test_models_registry() -> None:
     res = client.get("/api/v1/models")
     assert res.status_code == 200
     data = res.json()
@@ -51,7 +50,7 @@ def test_models_registry():
     assert "tfidf-lsa-384" in data["registered_models"]
 
 
-def test_literature_endpoints():
+def test_literature_endpoints() -> None:
     res_papers = client.get("/api/v1/literature/papers?limit=5")
     assert res_papers.status_code == 200
     papers = res_papers.json()
@@ -67,7 +66,7 @@ def test_literature_endpoints():
     assert len(res_entities.json()) > 0
 
 
-def test_retrieval_endpoints():
+def test_retrieval_endpoints() -> None:
     payload = {"query": "federated learning clinical oncology", "top_k": 3}
 
     res_lex = client.post("/api/v1/retrieval/lexical", json=payload)
@@ -88,7 +87,7 @@ def test_retrieval_endpoints():
     assert "dense_hits" in res_comp.json()
 
 
-def test_graph_endpoints():
+def test_graph_endpoints() -> None:
     res_export = client.get("/api/v1/graph/export?trusted_only=true")
     assert res_export.status_code == 200
     export_data = res_export.json()
@@ -97,7 +96,7 @@ def test_graph_endpoints():
     assert len(export_data["nodes"]) > 0
 
 
-def test_discovery_endpoints():
+def test_discovery_endpoints() -> None:
     payload = {
         "research_problem": "privacy-preserving federated machine learning in clinical oncology",
         "min_score": 0.2,
@@ -110,7 +109,7 @@ def test_discovery_endpoints():
     assert data["total_found"] >= 0
 
 
-def test_gap_verification_endpoint():
+def test_gap_verification_endpoint() -> None:
     payload = {
         "proposed_gap": "prompt injection defenses with zero computational latency",
         "target_domains": ["Cybersecurity"],
@@ -124,7 +123,7 @@ def test_gap_verification_endpoint():
     assert dossier["final_status"] != "VERIFIED_NOVEL"
 
 
-def test_negative_knowledge_endpoints():
+def test_negative_knowledge_endpoints() -> None:
     res = client.get("/api/v1/negative-knowledge/search?method=federated+learning")
     assert res.status_code == 200
     records = res.json()
@@ -135,7 +134,7 @@ def test_negative_knowledge_endpoints():
     assert len(res_bot.json()) > 0
 
 
-def test_orchestration_workflow_endpoint():
+def test_orchestration_workflow_endpoint() -> None:
     payload = {
         "research_question": "federated learning clinical healthcare privacy constraints",
         "target_domain": "Healthcare & Oncology",
@@ -148,5 +147,9 @@ def test_orchestration_workflow_endpoint():
     assert "workflow_id" in data
     assert "stages" in data
     assert len(data["stages"]) >= 6
-    assert data["final_status"] in ["HYPOTHESIS_FORMULATED", "INSUFFICIENT_EVIDENCE", "REJECTED_BY_REVIEWER"]
+    assert data["final_status"] in [
+        "HYPOTHESIS_FORMULATED",
+        "INSUFFICIENT_EVIDENCE",
+        "REJECTED_BY_REVIEWER",
+    ]
     assert data["total_duration_ms"] > 0.0

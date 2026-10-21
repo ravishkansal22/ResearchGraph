@@ -20,26 +20,22 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from typing import Any, Dict, List, Optional
+
+from pipelines.discovery.algorithms import CrossDomainDiscoveryEngine
+from pipelines.embeddings.retrieval import ScientificRetrievalEngine
+from pipelines.experiment.designer import ExperimentDesigner
+from pipelines.experiment.schema import ExperimentPlan
+from pipelines.gap_verification.verifier import ResearchGapVerifier
+from pipelines.hypothesis.generator import HypothesisGenerationEngine
+from pipelines.negative_knowledge.graveyard import DeadEndGraveyard
+from pipelines.reviewer.adversarial import AdversarialReviewer
+from pipelines.reviewer.schema import AdversarialReview, ReviewVerdict
 
 from researchgraph.schemas.api import (
     OrchestrationRequest,
     OrchestrationResponse,
     OrchestrationStageResult,
 )
-from pipelines.discovery.algorithms import CrossDomainDiscoveryEngine
-from pipelines.discovery.schema import DiscoveryCandidate
-from pipelines.embeddings.retrieval import ScientificRetrievalEngine
-from pipelines.experiment.designer import ExperimentDesigner
-from pipelines.experiment.schema import ExperimentPlan
-from pipelines.gap_verification.schema import GapStatus, ResearchGapDossier
-from pipelines.gap_verification.verifier import ResearchGapVerifier
-from pipelines.graph.builder import ResearchGraphBuilder
-from pipelines.hypothesis.generator import HypothesisGenerationEngine
-from pipelines.hypothesis.schema import ResearchHypothesis
-from pipelines.negative_knowledge.graveyard import DeadEndGraveyard
-from pipelines.reviewer.adversarial import AdversarialReviewer
-from pipelines.reviewer.schema import AdversarialReview, ReviewVerdict
 
 logger = logging.getLogger(__name__)
 
@@ -49,37 +45,45 @@ class ResearchWorkflowOrchestrator:
 
     def __init__(
         self,
-        retrieval_engine: Optional[ScientificRetrievalEngine] = None,
-        discovery_engine: Optional[CrossDomainDiscoveryEngine] = None,
-        gap_verifier: Optional[ResearchGapVerifier] = None,
-        graveyard: Optional[DeadEndGraveyard] = None,
-        hypothesis_engine: Optional[HypothesisGenerationEngine] = None,
-        reviewer: Optional[AdversarialReviewer] = None,
-        experiment_designer: Optional[ExperimentDesigner] = None,
+        retrieval_engine: ScientificRetrievalEngine | None = None,
+        discovery_engine: CrossDomainDiscoveryEngine | None = None,
+        gap_verifier: ResearchGapVerifier | None = None,
+        graveyard: DeadEndGraveyard | None = None,
+        hypothesis_engine: HypothesisGenerationEngine | None = None,
+        reviewer: AdversarialReviewer | None = None,
+        experiment_designer: ExperimentDesigner | None = None,
     ):
         self.retrieval = retrieval_engine or ScientificRetrievalEngine()
-        self.discovery = discovery_engine or CrossDomainDiscoveryEngine(retrieval_engine=self.retrieval)
+        self.discovery = discovery_engine or CrossDomainDiscoveryEngine(
+            retrieval_engine=self.retrieval
+        )
         self.gap_verifier = gap_verifier or ResearchGapVerifier(retrieval_engine=self.retrieval)
         self.graveyard = graveyard or DeadEndGraveyard()
-        self.hypothesis_engine = hypothesis_engine or HypothesisGenerationEngine(graveyard=self.graveyard)
+        self.hypothesis_engine = hypothesis_engine or HypothesisGenerationEngine(
+            graveyard=self.graveyard
+        )
         self.reviewer = reviewer or AdversarialReviewer()
         self.experiment_designer = experiment_designer or ExperimentDesigner()
 
     def execute_workflow(self, request: OrchestrationRequest) -> OrchestrationResponse:
         """Execute the complete multi-stage scientific discovery workflow."""
         start_time = time.perf_counter()
-        stages: List[OrchestrationStageResult] = []
-        workflow_id = f"wf_{hashlib.sha256((request.research_question + str(time.time())).encode()).hexdigest()[:12]}"
+        stages: list[OrchestrationStageResult] = []
+        wf_seed = (request.research_question + str(time.time())).encode()
+        workflow_id = f"wf_{hashlib.sha256(wf_seed).hexdigest()[:12]}"
 
         # Stage 1: Query Understanding
         t0 = time.perf_counter()
         query = request.research_question.strip()
+        target = request.target_domain or "General AI"
         stages.append(
             OrchestrationStageResult(
                 stage_name="Query Understanding",
                 status="COMPLETED",
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                output_summary=f"Parsed scientific problem '{query[:60]}...' with target domain {request.target_domain or 'General AI'}.",
+                output_summary=(
+                    f"Parsed scientific problem '{query[:60]}...' with target domain {target}."
+                ),
             )
         )
 
@@ -91,7 +95,9 @@ class ResearchWorkflowOrchestrator:
                 stage_name="Literature Retrieval",
                 status="COMPLETED" if retrieval_hits else "INSUFFICIENT_EVIDENCE",
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                output_summary=f"Retrieved {len(retrieval_hits)} grounded passages via Hybrid RRF fusion.",
+                output_summary=(
+                    f"Retrieved {len(retrieval_hits)} grounded passages via Hybrid RRF fusion."
+                ),
             )
         )
 
@@ -105,7 +111,8 @@ class ResearchWorkflowOrchestrator:
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
                 output_summary=(
                     f"Discovered {len(candidates)} cross-domain candidate connections."
-                    if candidates else "No viable cross-domain candidate surpassed the evidence score threshold."
+                    if candidates
+                    else "No viable cross-domain candidate surpassed the evidence score threshold."
                 ),
             )
         )
@@ -121,7 +128,10 @@ class ResearchWorkflowOrchestrator:
                 stage_name="Research-Gap Verification",
                 status="COMPLETED",
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                output_summary=f"Assigned status {gap_dossier.final_status.value}. {gap_dossier.confidence_rationale[:100]}...",
+                output_summary=(
+                    f"Assigned status {gap_dossier.final_status.value}. "
+                    f"{gap_dossier.confidence_rationale[:100]}..."
+                ),
             )
         )
 
@@ -154,24 +164,32 @@ class ResearchWorkflowOrchestrator:
                 stage_name="Negative Knowledge Check",
                 status="COMPLETED",
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                output_summary=f"Identified {len(collision_records)} documented failure modes or boundary conditions.",
+                output_summary=(
+                    f"Identified {len(collision_records)} documented failure modes "
+                    "or boundary conditions."
+                ),
             )
         )
 
         # Stage 6: Hypothesis Generation
         t0 = time.perf_counter()
         hypothesis = self.hypothesis_engine.generate_hypothesis(candidate=top_candidate)
+        num_ivs = len(hypothesis.independent_variables)
+        num_dvs = len(hypothesis.dependent_variables)
         stages.append(
             OrchestrationStageResult(
                 stage_name="Hypothesis Formulation",
                 status="COMPLETED",
                 execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                output_summary=f"Formulated falsifiable hypothesis '{hypothesis.title}' with {len(hypothesis.independent_variables)} IVs and {len(hypothesis.dependent_variables)} DVs.",
+                output_summary=(
+                    f"Formulated falsifiable hypothesis '{hypothesis.title}' "
+                    f"with {num_ivs} IVs and {num_dvs} DVs."
+                ),
             )
         )
 
         # Stage 7: Adversarial Reviewer ("Reviewer #2")
-        review: Optional[AdversarialReview] = None
+        review: AdversarialReview | None = None
         if request.execute_review:
             t0 = time.perf_counter()
             review = self.reviewer.review_hypothesis(hypothesis)
@@ -180,12 +198,16 @@ class ResearchWorkflowOrchestrator:
                     stage_name="Adversarial Review (Reviewer #2)",
                     status="COMPLETED",
                     execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                    output_summary=f"Review verdict: {review.verdict.value} (Score: {review.overall_score}/10). Identified {len(review.severity_ranked_weaknesses)} weaknesses.",
+                    output_summary=(
+                        f"Review verdict: {review.verdict.value} "
+                        f"(Score: {review.overall_score}/10). "
+                        f"Identified {len(review.severity_ranked_weaknesses)} weaknesses."
+                    ),
                 )
             )
 
         # Stage 8: Experiment Design
-        experiment_plan: Optional[ExperimentPlan] = None
+        experiment_plan: ExperimentPlan | None = None
         if request.execute_experiment_design:
             t0 = time.perf_counter()
             experiment_plan = self.experiment_designer.design_experiment(
@@ -197,7 +219,10 @@ class ResearchWorkflowOrchestrator:
                     stage_name="Experiment Protocol Design",
                     status="COMPLETED",
                     execution_time_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                    output_summary=f"Constructed {len(experiment_plan.protocol_steps)}-step executable protocol and {len(experiment_plan.ablation_plan)} ablations.",
+                    output_summary=(
+                        f"Constructed {len(experiment_plan.protocol_steps)}-step protocol "
+                        f"and {len(experiment_plan.ablation_plan)} ablations."
+                    ),
                 )
             )
 

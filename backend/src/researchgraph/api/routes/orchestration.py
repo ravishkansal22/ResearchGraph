@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from fastapi import APIRouter, Depends
 
 from researchgraph.schemas.api import (
@@ -15,7 +14,7 @@ from researchgraph.services.orchestrator import (
 
 router = APIRouter(prefix="/orchestration", tags=["End-to-End Orchestration"])
 
-_orchestrator: Optional[ResearchWorkflowOrchestrator] = None
+_orchestrator: ResearchWorkflowOrchestrator | None = None
 
 
 def get_orchestrator() -> ResearchWorkflowOrchestrator:

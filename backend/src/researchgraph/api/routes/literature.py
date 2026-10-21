@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from typing import Any
+
 import pyarrow.parquet as pq
+from fastapi import APIRouter, HTTPException, Query
+from pipelines.knowledge_base.query import KnowledgeBaseQueryEngine
 
 from researchgraph.core.config import settings
-from pipelines.knowledge_base.query import KnowledgeBaseQueryEngine
 
 router = APIRouter(prefix="/literature", tags=["Literature & Knowledge Base"])
 
-_query_engine: Optional[KnowledgeBaseQueryEngine] = None
+_query_engine: KnowledgeBaseQueryEngine | None = None
 
 
 def get_query_engine() -> KnowledgeBaseQueryEngine:
@@ -24,7 +25,7 @@ def get_query_engine() -> KnowledgeBaseQueryEngine:
 
 
 @router.get("/papers")
-def list_papers(limit: int = Query(default=20, ge=1, le=100)) -> List[Dict[str, Any]]:
+def list_papers(limit: int = Query(default=20, ge=1, le=100)) -> list[dict[str, Any]]:
     """Retrieve list of canonical papers from the knowledge base."""
     engine = get_query_engine()
     with engine._get_connection() as conn:
@@ -34,30 +35,36 @@ def list_papers(limit: int = Query(default=20, ge=1, le=100)) -> List[Dict[str, 
 
 
 @router.get("/papers/{paper_id}")
-def get_paper_details(paper_id: str) -> Dict[str, Any]:
+def get_paper_details(paper_id: str) -> dict[str, Any]:
     """Retrieve canonical paper metadata by ID."""
     engine = get_query_engine()
     paper = engine.get_paper(paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail=f"Paper {paper_id} not found.")
-    return paper
+    res: dict[str, Any] = dict(paper)
+    return res
 
 
 @router.get("/entities")
 def list_entities(
-    category: str = Query(default="METHOD", description="Entity category e.g. METHOD, PROBLEM, BOTTLENECK"),
+    category: str = Query(
+        default="METHOD", description="Entity category e.g. METHOD, PROBLEM, BOTTLENECK"
+    ),
     limit: int = Query(default=50, ge=1, le=200),
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """List canonical entities of a specified scientific type."""
     engine = get_query_engine()
-    return engine.list_entities_by_type(category=category, limit=limit)
+    entities: list[dict[str, Any]] = list(
+        engine.list_entities_by_type(category=category, limit=limit)
+    )
+    return entities
 
 
 @router.get("/statements")
 def list_statements(
-    paper_id: Optional[str] = Query(default=None),
-    category: Optional[str] = Query(default=None),
-) -> List[Dict[str, Any]]:
+    paper_id: str | None = Query(default=None),
+    category: str | None = Query(default=None),
+) -> list[dict[str, Any]]:
     """List evidence-backed scientific statements."""
     engine = get_query_engine()
     with engine._get_connection() as conn:
@@ -86,7 +93,7 @@ def list_statements(
 
 
 @router.get("/chunks/{chunk_id}")
-def get_chunk(chunk_id: str) -> Dict[str, Any]:
+def get_chunk(chunk_id: str) -> dict[str, Any]:
     """Retrieve text and metadata of a specific document chunk."""
     chunks_path = Path(settings.chunks_parquet_path)
     if not chunks_path.exists():

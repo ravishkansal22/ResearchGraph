@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query
+from pipelines.discovery.algorithms import CrossDomainDiscoveryEngine
+from pipelines.discovery.schema import DiscoveryCandidate
 
 from researchgraph.schemas.api import (
     DiscoverySearchRequest,
     DiscoverySearchResponse,
 )
-from pipelines.discovery.algorithms import CrossDomainDiscoveryEngine
-from pipelines.discovery.schema import DiscoveryCandidate
 
 router = APIRouter(prefix="/discovery", tags=["Cross-Domain Discovery"])
 
-_discovery_engine: Optional[CrossDomainDiscoveryEngine] = None
+_discovery_engine: CrossDomainDiscoveryEngine | None = None
 
 
 def get_discovery_engine() -> CrossDomainDiscoveryEngine:
@@ -42,14 +41,17 @@ def search_cross_domain_candidates(
     )
 
 
-@router.get("/swanson", response_model=List[DiscoveryCandidate])
+@router.get("/swanson", response_model=list[DiscoveryCandidate])
 def run_swanson_lbd(
     source_concept_id: str = Query(...),
     target_concept_id: str = Query(...),
     engine: CrossDomainDiscoveryEngine = Depends(get_discovery_engine),
-) -> List[DiscoveryCandidate]:
+) -> list[DiscoveryCandidate]:
     """Execute Swanson Literature-Based Discovery (A -> B -> C) between two concepts."""
-    return engine.discover_swanson_lbd(
-        source_concept_id=source_concept_id,
-        target_concept_id=target_concept_id,
+    cands: list[DiscoveryCandidate] = list(
+        engine.discover_swanson_lbd(
+            source_concept_id=source_concept_id,
+            target_concept_id=target_concept_id,
+        )
     )
+    return cands
